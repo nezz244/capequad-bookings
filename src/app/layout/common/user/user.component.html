@@ -1,0 +1,122 @@
+<!-- Button -->
+<button
+    mat-icon-button
+    style="background-color:#f4f4f4 !important;"
+    [matMenuTriggerFor]="userActions">
+    <span class="relative">
+        <img
+            class="w-8 h-8 rounded-full"
+            *ngIf="showAvatar && user.avatar"
+            [src]="user.avatar">
+        <mat-icon
+            *ngIf="!showAvatar || !user.avatar"
+            [svgIcon]="'heroicons_outline:user-circle'"></mat-icon>
+        <span
+            class="absolute right-0 bottom-0 w-2 h-2 rounded-full"
+            [ngClass]="{'mr-px mb-px': !showAvatar || !user.avatar,
+                          'bg-green-500': user.status === 'online',
+                          'bg-amber-500': user.status === 'away',
+                          'bg-red-500': user.status === 'busy',
+                          'bg-gray-400': user.status === 'not-visible'}"
+        ></span>
+    </span>
+</button>
+
+<mat-menu
+    [xPosition]="'before'"
+    #userActions="matMenu"
+    class="w-160 rounded-lg"
+    
+    >
+    <div class="flex flex-inline" mat-menu-item>
+        <div class="mr-5">
+            <img
+                class="w-8 h-8 rounded-full"
+                *ngIf="user.avatar"
+                [src]="user.avatar">
+        </div>
+        <div *ngIf="userType !=='agent'" class="flex flex-col leading-none">
+            <span class="text-lg font-normal">{{user?.name}}</span>
+            <span style="color: #ada9a9 !important;" class="mt-1.5 text-sm font-normal">{{user?.email}}</span>
+        </div>
+        <div *ngIf="userType=='agent'" class="flex flex-col leading-none">
+            <span *ngIf="agent?.fullName" class="">{{agent?.fullName}}</span>
+            <span style="color: #ada9a9 !important;" class="mt-1.5 text-sm ">{{agent?.email}}</span>
+        </div>
+    </div>
+  
+    <mat-divider class="my-2"></mat-divider>
+    <div class="ml-4 mt-5  font-bold tracking-wider  leading-tight text-sm">ACCOUNT</div>
+    <a href="/apps/settings" class="max-h-10 mt-2" mat-menu-item>
+        <span style="color: #545252 !important;" class="text-md  font-normal tracking-wide">Your settings</span>
+    </a>
+    <div class="ml-4 mt-5  font-bold tracking-wider  leading-tight text-sm">RESOURCES</div>
+    <!-- <button class="max-h-10" mat-menu-item>
+        <a href="mailto:support@chatinc.com"   style="color: #545252 !important;" class="text-md  font-normal tracking-wide">Get Help</a>
+    </button> -->
+    <button class="max-h-10" mat-menu-item>
+        <a href="https://chatinc.com/blog/" target="_blank" style="color: #545252 !important;" class="hover:underline text-md  font-normal tracking-wide">Read our blog</a>
+    </button>
+  
+    <!-- <button class="max-h-10" mat-menu-item>
+        <span style="color: #545252 !important;" class="text-md  font-normal tracking-wide">Find templates</span>
+    </button> -->
+ 
+    <div class="m-3 p-4 min-h-12 rounded-lg bg-purple-100">
+        <div class="flex flex-inline">
+            <div class="mt-2">
+                <span class="text-purple-500  font-bold tracking-wider  leading-tight text-sm ">DISCOVER API</span>
+            </div>
+            <div>
+                <span style="color: #545252 !important;"  class="ml-1 font-medium leading-tight text-sm">by ChatInc</span>
+            </div>
+            <div class="cursor-pointer ml-auto items-end">
+                <a target="_blank" href="https://docs.broadcast.chatinc.com">
+                    <!-- <mat-icon class="icon-size-4 text-secondary-500" svgIcon="heroicons_outline:external-link"></mat-icon> -->
+                    <i class="ph-bold ph-arrow-square-in text-lg"></i>
+
+                </a>
+
+            </div>
+        </div>
+        <div class="flex flex-inline">
+            <span style="color: #6a6868 !important;"  class="font-normal leading-tight text-sm">Build chat experiences fast.</span>
+        </div>
+    </div>
+
+    <mat-divider class="my-2"></mat-divider>
+    <button
+        mat-menu-item
+        (click)="signOut()">
+        <span class=" font-medium text-warn">Log out</span>
+    </button>
+</mat-menu>
+
+<mat-menu
+    class="user-status-menu"
+    #userStatus="matMenu">
+    <button
+        mat-menu-item
+        (click)="updateUserStatus('online')">
+        <span class="w-4 h-4 mr-3 rounded-full bg-green-500"></span>
+        <span>Online</span>
+    </button>
+    <button
+        mat-menu-item
+        (click)="updateUserStatus('away')">
+        <span class="w-4 h-4 mr-3 rounded-full bg-amber-500"></span>
+        <span>Away</span>
+    </button>
+    <button
+        mat-menu-item
+        (click)="updateUserStatus('busy')">
+        <span class="w-4 h-4 mr-3 rounded-full bg-red-500"></span>
+        <span>Busy</span>
+    </button>
+    <button
+        mat-menu-item
+        (click)="updateUserStatus('not-visible')">
+        <span class="w-4 h-4 mr-3 rounded-full bg-gray-400"></span>
+        <span>Invisible</span>
+    </button>
+</mat-menu>

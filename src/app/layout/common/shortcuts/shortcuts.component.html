@@ -1,0 +1,152 @@
+<div class="hs-dropdown cursor-pointer relative inline-flex ">
+            <button id="hs-dropdown-with-header" type="button" class="group hs-dropdown-toggle py-3 px-4 inline-flex justify-center items-center gap-2 font-medium text-gray-700  align-middle  transition-all text-sm dark:bg-slate-900 dark:hover:bg-slate-800 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white dark:focus:ring-offset-gray-800">
+              
+              <!-- <svg class="hs-dropdown-open:rotate-180 w-2.5 h-2.5 text-gray-600" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 5L8.16086 10.6869C8.35239 10.8637 8.64761 10.8637 8.83914 10.6869L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg> -->
+
+              <div class="group-hover:hidden">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g opacity="0.75">
+                    <rect width="4" height="4" fill="#521CF5"/>
+                    <rect x="6" width="4" height="4" fill="#521CF5"/>
+                    <rect x="12" width="4" height="4" fill="#521CF5"/>
+                    <rect y="6" width="4" height="4" fill="#521CF5"/>
+                    <rect x="6" y="6" width="4" height="4" fill="#521CF5"/>
+                    <rect x="12" y="6" width="4" height="4" fill="#521CF5"/>
+                    <rect y="12" width="4" height="4" fill="#521CF5"/>
+                    <rect x="6" y="12" width="4" height="4" fill="#521CF5"/>
+                    <rect x="12" y="12" width="4" height="4" fill="#521CF5"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="hidden group-hover:block">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="16" height="4" fill="#521CF5"/>
+                    <rect y="6" width="16" height="4" fill="#521CF5"/>
+                    <rect y="12" width="16" height="4" fill="#521CF5"/>
+                </svg>
+            </div>
+
+
+
+
+            </button>
+          
+            <div class="hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden min-w-[15rem] bg-white shadow-2xl p-2 mt-2 dark:bg-gray-800 dark:border dark:border-gray-700 border border-2 rounded-xl" aria-labelledby="hs-dropdown-with-header">
+             
+             
+              <div class="py-3 px-5 -m-2 bg-gray-100 rounded-t-lg dark:bg-gray-700">
+                <div class="flex flex-inline">
+                    <div class="w-10 h-10 rounded-full" >
+                        <img *ngIf="!user?.avatar" class="cover rounded-full" src="../../../../assets/images/avatars/builder.jpeg'">
+                        <img *ngIf="user?.avatar" class="cover rounded-full" [src]="user?.avatar">
+
+                    </div>
+                    <div class="ml-5">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Signed in as</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-300">{{user?.email}}</p>
+                    </div>
+                </div>
+
+              </div>
+              <div class=" mt-2 py-2 first:pt-0 last:pb-0">
+                <a (click)="navigateApp('broadcasts')" class="flex items-center gap-x-3.5 py-2 px-3 rounded-md text-sm text-gray-800 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300" >
+              
+                  <!-- <i class="ph ph-megaphone-simple icon-size-5"></i> -->
+                    <svg width="25" height="25" viewBox="0 0 27 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.60758 12.5853V16.4243C2.60758 17.15 3.08008 17.7912 3.77195 18.0021L22.2501 23.6721C23.3132 24.0012 24.3848 23.1996 24.3848 22.0943V6.90684C24.3848 5.79309 23.3132 4.99996 22.2501 5.32902L3.77195 11.0159C3.08008 11.2268 2.60758 11.8681 2.60758 12.5937V12.5853Z" fill="#7660E8"/>
+                        <g style="mix-blend-mode:multiply">
+                        <path d="M8.51344 13.582H11.8041C12.7407 13.582 13.5 14.3413 13.5 15.278V22.028C13.5 22.9646 12.7407 23.7239 11.8041 23.7239H8.51344C7.5768 23.7239 6.8175 22.9646 6.8175 22.028V15.278C6.8175 14.3413 7.5768 13.582 8.51344 13.582Z" fill="#2EE8ED"/>
+                        </g>
+                    </svg>
+                  Broadcast
+                </a>
+                <a (click)="navigateApp('grow')"  class="flex items-center gap-x-3.5 py-2 px-3 rounded-md text-sm text-gray-800 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300" >
+                 
+                  <!-- <i class="ph ph-qr-code icon-size-5"></i> -->
+                  <!-- <img width="27" height="27" src="../../../../assets/images/nav/grow_logo.svg"> -->
+                  <svg width="25" height="25" viewBox="0 0 250 249" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g style="mix-blend-mode:multiply">
+                    <ellipse cx="125" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    <ellipse cx="125" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    <ellipse cx="125" cy="30.5" rx="31" ry="30.5" fill="#5EDB65"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="74" y="61" width="102" height="102" rx="20" fill="#0092FF"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <ellipse cx="199" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    <ellipse cx="199" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    <ellipse cx="199" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="148" y="61" width="102" height="102" rx="20" fill="#5EDB65"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <ellipse cx="51" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    <ellipse cx="51" cy="30.5" rx="31" ry="30.5" fill="#F8D91E"/>
+                    <ellipse cx="51" cy="30.5" rx="31" ry="30.5" fill="#0092FF"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect y="61" width="102" height="102" rx="20" fill="#7660E7"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="20" y="147" width="62" height="102" rx="20" fill="#7660E7"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="94" y="147" width="62" height="102" rx="20" fill="#0092FF"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="169" y="147" width="62" height="102" rx="20" fill="#5EDB65"/>
+                    </g>
+                  </svg>
+                  Grow
+                </a>
+                <a (click)="navigateApp('automate')"  class="flex items-center gap-x-3.5 py-2 px-3 rounded-md text-sm text-gray-800 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300" >
+                 
+                  <!-- <i class="ph ph-robot icon-size-5"></i> -->
+                  <!-- <img width="27px" height="27px" src="../../../../assets/images/nav/automate_logo.svg"> -->
+                  <svg width="25" height="25" viewBox="0 0 250 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="130" y="130" width="120" height="120" rx="20" fill="#F8D91E"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect x="60" y="60" width="120" height="120" rx="20" fill="#2FE8ED"/>
+                    </g>
+                    <g style="mix-blend-mode:multiply">
+                    <rect width="120" height="120" rx="20" fill="#EF5323"/>
+                    </g>
+                  </svg>
+                  
+                  Automate
+                </a>
+                <!-- <a (click)="navigateApp('live')"  class="flex items-center gap-x-3.5 py-2 px-3 rounded-md text-sm text-gray-800 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300" >
+                  
+                  <i class="ph ph-headset icon-size-5"></i>
+                  Live
+                </a> -->
+              </div>
+
+              <div class="py-3 px-5 -m-2  rounded-b-lg border-t mt-2">
+                <div class="mt-2 py-2 first:pt-0 last:pb-0">
+                    <a  (click)="navigateApp('main')" class="flex items-center gap-x-3.5 py-2 rounded-md text-sm text-gray-800  focus:ring-2 focus:ring-blue-500 dark:text-gray-400" >
+                   
+                      <!-- <i class="ph ph-house-simple icon-size-5"></i> -->
+                      <svg width="25" height="25" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g style="mix-blend-mode:multiply">
+                        <path d="M15.263 0.803784C15.6593 0.371578 16.3407 0.371577 16.737 0.803783L28.3197 13.4353C28.9078 14.0766 28.4528 15.1111 27.5827 15.1111H4.41733C3.54715 15.1111 3.09218 14.0766 3.68029 13.4353L15.263 0.803784Z" fill="#0092FF"/>
+                        </g>
+                        <g style="mix-blend-mode:multiply">
+                        <path d="M4.74023 14.7227C4.74023 14.4465 4.96409 14.2227 5.24023 14.2227H26.7588C27.0349 14.2227 27.2588 14.4465 27.2588 14.7227V31.5004C27.2588 31.7766 27.0349 32.0004 26.7588 32.0004H5.24024C4.96409 32.0004 4.74023 31.7766 4.74023 31.5004V14.7227Z" fill="#F8D91E"/>
+                        </g>
+                        <g style="mix-blend-mode:multiply">
+                        <path d="M11.8516 23.0176C11.8516 22.7414 12.0754 22.5176 12.3516 22.5176H19.6479C19.924 22.5176 20.1479 22.7414 20.1479 23.0176V31.4991C20.1479 31.7752 19.924 31.9991 19.6479 31.9991H12.3516C12.0754 31.9991 11.8516 31.7752 11.8516 31.4991V23.0176Z" fill="#0092FF"/>
+                        </g>
+                    </svg>
+                      Jump to home
+                    </a>
+
+              </div>
+            </div>
+          </div>

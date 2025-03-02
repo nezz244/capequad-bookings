@@ -1,0 +1,116 @@
+
+@font-face {
+    font-family: 'general';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style: normal;
+    src: url("../../../../assets/fonts/General/GeneralSans-Regular.otf") format("opentype");
+
+}
+
+@font-face {
+    font-family: 'general-light';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style:light;
+    src: url("../../../../assets/fonts/General/GeneralSans-Light.otf") format("opentype");
+
+}
+
+@font-face {
+    font-family: 'general-extra-light';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style:light;
+    src: url("../../../../assets/fonts/General/GeneralSans-Extralight.otf") format("opentype");
+
+}
+
+@font-face {
+    font-family: 'general-semibold';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style:semibold;
+    src: url("../../../../assets/fonts/General/GeneralSans-Semibold.otf") format("opentype");
+
+}
+
+
+@font-face {
+    font-family: 'general-bold';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style:bold;
+    src: url("../../../../assets/fonts/General/GeneralSans-Bold.otf") format("opentype");
+
+}
+
+
+
+.general{
+    font-family: general !important;
+    font-weight: 100;
+}
+
+.general-light{
+    font-family: general-light !important;
+    font-weight: 100;
+}
+
+.general-extra-light{
+    font-family: general-light !important;
+    font-weight: 100;
+}
+
+.general-bold{
+    font-family: general-bold !important;
+    font-weight: 100;
+}
+
+
+
+.text-chami-gray{
+    color: #737373 !important;
+}
+
+
+//main font 
+
+@font-face {
+    font-family: 'Apercu-Pro';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style: Light;
+    src: url("../../../../assets/fonts/ApercuPro/ApercuPro-Light-english.woff2") format("woff2");
+
+}
+
+.basefont-light{
+    font-family: Apercu-Pro !important;
+}
+
+
+// builder font 
+
+@font-face {
+    font-family: 'sans-serif';
+    font-weight: 100 500;
+    font-display: swap;
+    font-style: Light;
+    src: url("../../../../assets/fonts/sans-serif/SansSerifFLF.otf") format("otf");
+
+}
+
+
+
+.sans-bold{
+    font-family: sans-serif !important;
+    font-weight: normal;
+}
+
+.sans{
+    font-family: sans-serif !important;
+    font-weight: 100;
+}
+
+

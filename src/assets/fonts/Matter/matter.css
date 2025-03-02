@@ -1,0 +1,8 @@
+@font-face {
+    font-family: 'Matter';
+    font-weight: 100 900;
+    font-display: swap;
+    font-style: normal;
+    font-named-instance: 'Regular';
+    src: url("../Matter/matter-400.woff2") format("woff2");
+}

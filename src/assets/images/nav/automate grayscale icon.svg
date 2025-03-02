@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g style="mix-blend-mode:luminosity" opacity="0.8">
+<g style="mix-blend-mode:multiply">
+<rect x="16.6406" y="16.6406" width="15.36" height="15.36" rx="3" fill="#F8D91E"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect x="7.67969" y="7.67969" width="15.36" height="15.36" rx="3" fill="#2FE8ED"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect width="15.36" height="15.36" rx="3" fill="#EF5323"/>
+</g>
+</g>
+</svg>

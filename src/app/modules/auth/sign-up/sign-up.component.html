@@ -1,0 +1,251 @@
+<div class="grid grid-cols-4  bg-gray-900 w-full h-full p-0 overflow-hidden"
+style="background-color: #131313;"
+>
+
+    <div class="col-span-2 h-full"
+    style="background-color: #131313;"
+    >
+ 
+    <div class="relative hidden md:flex flex-auto items-center justify-center h-full p-16 lg:px-28 overflow-hidden">
+        <!-- Background - @formatter:off -->
+      
+        <!-- @formatter:on -->
+        <!-- Content -->
+        <div class="z-10 relative w-full max-w-2xl mt-20">
+            <div class="text-6xl font-bold leading-none  text-gray-100">
+                <div class="text-center tracking-wide">Sign up</div>
+                <div class="text-center tracking-wide mt-3">and get started</div>
+            </div>
+            
+            <div class="flex justify-center items-center mt-10">
+                <div class="flex flex-0 items-center -space-x-1.5">
+                   
+                    <img class="h-80 w-100 scale-75" src="../../../../assets/images/custom/signup.png">    
+                   
+                </div>
+            </div>
+            <div class="text-center font-medium tracking-tight text-white text-xl  mt-15"> &COPY; ChatInc </div>
+
+        </div>
+    </div>
+    </div>
+    <div class="col-span-2 h-screen bg-card rounded-tl-2xl rounded-bl-2xl">
+        <!-- image section -->
+        <div class="flex flex-inline w-auto m-3">
+            <div class="">
+              
+                <button
+               
+                mat-button
+                
+                [matMenuTriggerFor]="languages">
+                    <mat-icon class=" mr-3 icon-size-4" style="color:#737373 !important" svgIcon="heroicons_solid:globe"></mat-icon>
+
+                    <span style="color:#737373 !important" class="font-normal"> Language</span>
+                    <mat-icon class="ml-2 icon-size-4" style="color:#737373 !important"  svgIcon="mat_outline:keyboard_arrow_down"></mat-icon>
+
+
+                    <mat-menu #languages>
+                        <button
+                        
+                            class="text-gray-900 text-sm "
+                          
+                            mat-menu-item
+                            >
+                           English UK
+                        </button>
+            
+                        <button
+                            class="text-gray-900 text-sm"
+                          
+                            mat-menu-item
+                            >
+                            English US
+            
+                        </button>
+                        
+                     
+            
+                    </mat-menu>
+                </button>
+            </div>
+            <div class="flex flex-inline ml-auto items-end ">
+                <span class="basefont-light text-md" style="color:#737373 !important">Already have an account?</span> 
+                <button [routerLink]="'/sign-in'" class=" text-gray-900 mat-stroked-button text-sm max-h-3 rounded-sm ml-3">
+                    Log In
+                </button>
+            </div>
+        </div>
+        <!-- form section -->
+        <div class="w-full sm:w-auto py-8 px-4 sm:p-12 md:p-16">
+            <!-- <div class="mt-15 text-4xl text-center font-extrabold tracking-tight leading-tight">ChatInc</div> -->
+            <div class="mt-5 text-3xl text-center " 
+            >
+                    Create your free account.
+            </div>
+
+
+            <div class="w-full flex items-center justify-center">
+
+            
+                <div  class="mt-40 sm:mt-0 sm:p-12 sm:rounded-2xl ">
+                    <div class="sm:w-80 mx-auto sm:mx-0">
+            
+                       
+                        <!-- Sign in form -->
+                        <form
+                            class=""
+                            [formGroup]="signUpForm">
+                           <!--full name field-->
+                            <div>
+                                <label class="text-accent-900  text-md font-light">Full Name</label>
+            
+                            </div>
+                            <div class="w-full mb-5">
+                                <input
+                                (click)="onFocus('name')"
+                                id="name"
+                                autofocus
+                                class="border border-gray-900 pl-2 text-md  rounded-sm w-full border border-dark min-h-10  shadow-primary"
+                                [ngClass]="{'ring':isFocused==='name'}"
+                                [formControlName]="'fullName'">
+                            </div>
+                            <!-- Email field -->
+                        
+                            <div>
+                                <label class="text-accent-900 text-lg  font-light">Email</label>
+            
+                            </div>
+                            <div class="w-full mb-5">
+                                <input
+                                (click)="onFocus('email')"
+                                id="email"
+                                class="border border-gray-900 pl-2 text-lg  rounded-sm w-full border border-dark min-h-10  shadow-primary"
+                                [ngClass]="{'ring':isFocused==='email'}"
+                                [formControlName]="'email'">
+                            </div>
+                            
+                            
+                            
+            
+                            <!-- Password field -->
+            
+                            <div>
+                                <label class="text-accent-900 text-lg  font-light">Password</label>
+            
+                            </div>
+                            <div class="w-full mb-5">
+                                <input
+                                (click)="onFocus('password')"
+                                id="password"
+                                type="password"
+                                class="border border-gray-900 pl-2 text-md rounded-sm w-full border border-dark min-h-10  shadow-primary"
+                                [ngClass]="{'ring':isFocused==='password'}"
+                                placeholder="At least 8 Characters"
+                                [formControlName]="'password'"
+                                #passwordField
+                                >
+                                <div class="-mt-10 w-full flex flex-inline">
+                                    
+                                        <button
+                                            class="ml-60 z-40"
+                                            mat-icon-button
+                                            type="button"
+                                            (click)="passwordField.type === 'password' ? passwordField.type = 'text' : passwordField.type = 'password'"
+                                            matSuffix>
+                                            <mat-icon
+                                                class="icon-size-5 text-chami-gray"
+                                                *ngIf="passwordField.type === 'password'"
+                                                [svgIcon]="'feather:eye'"></mat-icon>
+                                            <mat-icon
+                                                class="icon-size-5 text-chami-gray"
+                                                *ngIf="passwordField.type === 'text'"
+                                                [svgIcon]="'feather:eye-off'"></mat-icon>
+                                        </button>
+                                  
+                                </div>
+                           
+                            </div>
+            
+            
+
+                                <!-- ToS and PP -->
+                            <div class="inline-flex text-md items-end w-full mt-1.5">
+                                <mat-checkbox
+                                    [color]="'primary'"
+                                    class=""
+                                    [formControlName]="'agreements'">
+                                    <span class="" >I agree to the</span>
+                                    <a
+                                        class=" ml-1 text-accent-900 underline"
+                                        [routerLink]="['./']">Terms of Service
+                                    </a>
+                                    <span class="">and</span>
+                                    <a
+                                        class="ml-1  text-accent-900 underline"
+                                        [routerLink]="['./']">Privacy Policy
+                                    </a>
+                                </mat-checkbox>
+                            </div>
+            
+                            <!-- Submit button -->
+                            <button
+                                
+                                class="fuse-mat-button-large rounded-sm w-full mt-6 bg-accent-900"
+                                mat-flat-button
+                                [disabled]="isLoading2"
+                                (click)="trigger(signUpForm)"
+                                id="submit"
+                                >
+                                <span class="text-white " >
+                                    Create my free account
+                                </span>
+                                <mat-progress-spinner
+                                    *ngIf="isLoading2"
+                                    [diameter]="24"
+                                    [mode]="'indeterminate'"></mat-progress-spinner>
+                            </button>
+                            <!-- [disabled]="isMobile" -->
+            
+                        
+                            <!-- Separator -->
+                            <div class="flex items-center mt-8">
+                                <div class="flex-auto mt-px border-t"></div>
+                                <div class="mx-2 text-secondary">
+                                    <div class="flex items-baseline mt-0.5 font-normal">
+                                            <div class="text-md ">Or continue with</div>
+                                            
+                                        </div>
+                                </div>
+                            <div class="flex-auto mt-px border-t"></div>
+                            </div>
+                            
+            
+                            <!-- Single sign-on buttons -->
+                            <button
+                                
+                                class="fuse-mat-button-large font-normal rounded-md py-0 w-full mt-6"
+                                mat-stroked-button
+                                [color]="'primary'"
+                                [disabled]="signUpForm.disabled"
+                                (click)="googleSignUp()">
+                                <img class="h-5 w-5 mr-5" src="../../../../assets/images/custom/google.png">
+                                <span *ngIf="!signUpForm.disabled">
+                                    Sign up with Google
+                                </span>
+
+                            </button>
+                            <div class="mt-5 text-center text-xs text-gray-500">
+                                All rights reserved. ChatInc &COPY; 2023
+                            </div>
+                            
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,35 @@
+<div class="w-screen h-full bg-dark p-5">
+    <div  class="text-white text-headers font-bold text-center text-3xl sm:text-9xl mt-5">
+      Payment Success.
+    </div>
+    <!-- <div class="sm:text-xl text-sm  text-center text-white">
+       Booking created successfully
+    </div> -->
+
+    <div class="mx-auto mt-10 p-10 md:min-h-100 md:w-140 rounded-lg bg-white">
+        <div class="mx-auto text-center">
+            
+             <img class="w-40 h-40 mx-auto" src="../../../../../assets/images/activities/success.svg">
+            
+        </div>
+        <div class="text-center text-headers md:text-2xl text-md mt-5 font-semibold">
+            Booking created successfully
+        </div>
+        <div class="text-center md:text-md text-sm mt-5 font-semibold">
+            Hi {{booking?.fullName}} your booking for {{booking?.title}} for {{booking?.totalTickets}} person(s) on {{booking?.date | date }} ( {{booking?.date }} )has been created  successfully with Cape Quad.
+        </div>
+        <div class="text-center md:text-md text-sm mt-4">
+            An email with booking has been sent to info@capequad.com . Your tour guide will contact you within an hour from booking time. Happy touring !! 💪
+        </div>
+        <div class="text-center md:text-md text-sm mt-4">
+            <button mat-button >
+
+                <a href="https://capequad.com" class="text-dark underline">Go to home </a>        
+            </button>
+        </div>
+    </div>
+   
+    
+
+
+   </div>

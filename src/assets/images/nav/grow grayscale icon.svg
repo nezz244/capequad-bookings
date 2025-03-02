@@ -1,0 +1,31 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g style="mix-blend-mode:luminosity" opacity="0.8">
+<g style="mix-blend-mode:multiply">
+<ellipse cx="15.9993" cy="3.904" rx="3.968" ry="3.904" fill="#0092FF"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect x="9.47266" y="7.80859" width="13.056" height="13.056" rx="3" fill="#0092FF"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<ellipse cx="25.4719" cy="3.904" rx="3.968" ry="3.904" fill="#5EDB65"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect x="18.9453" y="7.80859" width="13.056" height="13.056" rx="3" fill="#5EDB65"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<ellipse cx="6.52659" cy="3.904" rx="3.968" ry="3.904" fill="#7660E7"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect y="7.80859" width="13.056" height="13.056" rx="3" fill="#7660E7"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect x="2.55859" y="18.8164" width="7.936" height="13.056" rx="3" fill="#7660E7"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect x="12.0312" y="18.8164" width="7.936" height="13.056" rx="3" fill="#0092FF"/>
+</g>
+<g style="mix-blend-mode:multiply">
+<rect x="21.6328" y="18.8164" width="7.936" height="13.056" rx="3" fill="#5EDB65"/>
+</g>
+</g>
+</svg>
