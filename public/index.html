@@ -219,6 +219,18 @@
                 let transactions = [];
 
                 if (filter === 'currentBalance') {
+
+                    // Add incomes from incomes table
+                    data.incomes.forEach(income => {
+                        transactions.push({
+                            transactionName: income.name ?? 'Income',
+                            income: income.amount,
+                            expense: null,
+                            date: new Date(income.date),
+                            notes: income.notes || ''
+                        });
+                    });
+
                     data.expenses.forEach(expense => {
                         transactions.push({
                             transactionName: expense.expense_name,
