@@ -129,6 +129,37 @@ app.get('/chacco/incomes/data', async (req, res) => {
     }
 });
 
+app.post('/incomes', async (req, res) => {
+    try {
+        const { name, amount, date, notes } = req.body;
+
+        // Input validation
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return res.status(400).json({ error: 'Name is required and must be a valid string.' });
+        }
+
+        if (!amount || isNaN(amount) || amount <= 0) {
+            return res.status(400).json({ error: 'Amount is required and must be a positive number.' });
+        }
+
+        if (!date || isNaN(new Date(date).getTime())) {
+            return res.status(400).json({ error: 'Date is required and must be a valid date.' });
+        }
+
+        if (notes && typeof notes !== 'string') {
+            return res.status(400).json({ error: 'Notes must be a valid string.' });
+        }
+
+        // If validation passed, proceed with the query
+        const query = 'INSERT INTO incomes (name, amount, date, notes) VALUES (?, ?, ?, ?)';
+        db.query(query, [name, amount, date, notes], (err, result) => {
+            if (err) throw err;
+            res.json({ message: 'Income added successfully', id: result.insertId });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Database insertion failed' });
+    }
+});
 
 app.get('/chacco/balance_breakdown/all', async (req, res) => {
     try {
