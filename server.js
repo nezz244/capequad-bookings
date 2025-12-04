@@ -113,36 +113,21 @@ app.get('/chacco/expenses/total', async (req, res) => {
 app.get('/chacco/incomes/data', async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT month,
-                   SUM(installmentsAmount) AS installmentsAmount,
-                   SUM(amountPaid) AS amountPaid
-            FROM (
-                     -- Get installments per month
-                     SELECT DATE_FORMAT(installment_date, '%Y-%m') AS month,
-                            SUM(amount) AS installmentsAmount,
-                            0 AS amountPaid
-                     FROM installments
-                     GROUP BY DATE_FORMAT(installment_date, '%Y-%m')
-
-                     UNION ALL
-
-                     -- Get amount_paid per month
-                     SELECT DATE_FORMAT(date_joined, '%Y-%m') AS month,
-                            0 AS installmentsAmount,
-                            SUM(amount_paid) AS amountPaid
-                     FROM clients
-                     GROUP BY DATE_FORMAT(date_joined, '%Y-%m')
-                 ) AS combined
-            GROUP BY month
+            SELECT
+                DATE_FORMAT(date, '%Y-%m') AS month,
+                SUM(amount) AS totalIncome
+            FROM incomes
+            GROUP BY DATE_FORMAT(date, '%Y-%m')
             ORDER BY month;
-
         `);
+
         res.json(rows);
+
     } catch (error) {
         console.error('Error fetching income data:', error);
         res.status(500).json({ error: 'Failed to fetch income data' });
     }
-})
+});
 
 
 app.get('/chacco/balance_breakdown/all', async (req, res) => {

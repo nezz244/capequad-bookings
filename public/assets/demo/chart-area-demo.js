@@ -1,19 +1,15 @@
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     // Set global font family and color
-    // Set new default font family and font color to mimic Bootstrap's default styling
     Chart.defaults.global.defaultFontFamily = '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
     Chart.defaults.global.defaultFontColor = '#292b2c';
-
-
 
     // Fetch data for Income (Line Graph)
     const incomeResponse = await fetch('/chacco/incomes/data');
     const incomesData = await incomeResponse.json();
     const months = incomesData.map(item => item.month);
-    const installmentsAmount = incomesData.map(item => item.installmentsAmount);
-    const amountPaid = incomesData.map(item => item.amountPaid);
-    console.log("pano",incomesData);
+    const totalIncome = incomesData.map(item => item.totalIncome);
+    console.log("Income data:", incomesData);
 
     // Render Income Line Graph
     new Chart(document.getElementById('myAreaChart'), {
@@ -22,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         labels: months,
         datasets: [
           {
-            label: 'Installments Amount',
+            label: 'Total Income',
             lineTension: 0.3,
             backgroundColor: 'rgba(78, 115, 223, 0.05)',
             borderColor: 'rgba(78, 115, 223, 1)',
@@ -34,34 +30,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
             pointHitRadius: 10,
             pointBorderWidth: 2,
-            data: installmentsAmount,
-          },
-          {
-            label: 'Deposits Paid',
-            lineTension: 0.3,
-            backgroundColor: 'rgba(54, 185, 204, 0.05)',
-            borderColor: 'rgba(54, 185, 204, 1)',
-            pointRadius: 3,
-            pointBackgroundColor: 'rgba(54, 185, 204, 1)',
-            pointBorderColor: 'rgba(54, 185, 204, 1)',
-            pointHoverRadius: 3,
-            pointHoverBackgroundColor: 'rgba(54, 185, 204, 1)',
-            pointHoverBorderColor: 'rgba(54, 185, 204, 1)',
-            pointHitRadius: 10,
-            pointBorderWidth: 2,
-            data: amountPaid,
+            data: totalIncome,
           }
         ]
       },
       options: {
         maintainAspectRatio: false,
         layout: {
-          padding: {
-            left: 10,
-            right: 25,
-            top: 25,
-            bottom: 0
-          }
+          padding: { left: 10, right: 25, top: 25, bottom: 0 }
         },
         scales: {
           xAxes: [{

@@ -176,52 +176,58 @@ function handleDetailsButtonClick(event) {
     }
 }
 function attachListeners() {
-    document.getElementById('unpaid').addEventListener('click', () => showList('unpaid'));
-    document.getElementById('paid').addEventListener('click', () => showList('paid'));
-    document.getElementById('expensesButton').addEventListener('click', recordExpenses);
-    document.getElementById('addCustomerButton').addEventListener('click', addNewCustomer);
-    document.getElementById('report').addEventListener('click', function () {
-        window.location.href = 'construction_graph.html';
-    });
+document.getElementById('expensesButton').addEventListener('click', recordExpenses);
+document.getElementById('income').addEventListener('click', recordIncome);
+
     //document.getElementById('logoutButton').addEventListener('click', logoutUser);
 }
 async function updateDashboard() {
         try {
-            // Fetch civil servants who have not paid this month
-            const unpaidResponse = await fetch('/chacco/unpaid');
-            const unpaidData = await unpaidResponse.json();
-            const unpaidCount = unpaidData.length;
-            // Fetch paid civil servants
-            const paidResponse = await fetch('/chacco/paid');
-            const paidData = await paidResponse.json();
-            const paidCount = paidData.length;
-            // Fetch the total amount received from installments
-            const installmentsResponse = await fetch('/chacco/installments/total');
-            const totalInstallmentsReceivedData = await installmentsResponse.json();
-            const totalReceived = parseFloat(totalInstallmentsReceivedData.totalInstallments);
-            // Fetch the total amount received from client registrations
-            const registrationResponse = await fetch('/chacco/clients/total-paid');
-            const totalRegistrationReceivedData = await registrationResponse.json();
-            const totalRegistrationReceived = parseFloat(totalRegistrationReceivedData["total_paid"]) || 0;
+            // Fetch the total income from other sources
+            const incomeResponse = await fetch('https://www.chaccooffice.org/chacco/incomes/total');
+            const totalIncomeData = await incomeResponse.json();
+            const totalIncome = parseFloat(totalIncomeData.totalIncome) || 0;
+
             // Fetch the total expenses
             const expensesResponse = await fetch('/chacco/expenses/total');
             const expensesTotal = await expensesResponse.json();
-            // Fetch the total number of registered clients
-            const clientsResponse = await fetch('/chacco/clients/total');
-            const totalClientsData = await clientsResponse.json();
-            const totalClients = totalClientsData.totalClients || 0;
+
             // ✅ Calculate total balance
-            const totalBalance = totalRegistrationReceived + totalReceived - expensesTotal.total;
+            const totalBalance =  totalIncome - expensesTotal.total;
             // Update the dashboard
-            document.getElementById('unpaidCount').textContent = unpaidCount.toString();
-            document.getElementById('paidCount').textContent = paidCount.toString();
             document.getElementById('currentBalance').textContent = totalBalance.toFixed(2);
-            document.getElementById('totalClients').textContent = totalClients.toString();
         } catch (error) {
             console.error('Error updating dashboard:', error);
         }
     }
+function recordIncome() {
+    const formHTML = `
+    <div class="form-popup">
+        <h3>Record Income</h3>
+        <label for="incomeName">Income Name:</label>
+        <input type="text" id="incomeName" class="form-input"><br>
+        
+        <label for="incomeAmount">income Amount:</label>
+        <input type="text" id="incomeAmount" class="form-input"><br>
+        
+        <label for="incomeDate">Income Date:</label>
+        <input type="date" id="incomeDate" class="form-input"><br>
+        
+        <label for="incomeNotes">Notes:</label>
+        <input type="text" id="incomeNotes" class="form-input"><br>
+        
+        <button type="button" id="submitIncome" class="btn">Submit</button>
+        <button type="button" id="closeIncomeForm" class="btn">Cancel</button>
+    </div>`;
+    showFormPopup(formHTML, 0.7); // you can tweak the scale value
 
+    // Event listeners for close button
+    document.getElementById('closeIncomeForm').addEventListener('click', () => {
+        updateDashboard();
+        document.body.removeChild(overlay);
+    });
+    document.getElementById('submitIncome').addEventListener('click', submitIncome);
+}
 // Submit New Client Data
 function submitNewClient() {
         const clientName = document.getElementById('clientName').value;
