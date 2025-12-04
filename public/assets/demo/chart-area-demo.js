@@ -7,9 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch data for Income (Line Graph)
     const incomeResponse = await fetch('/chacco/incomes/data');
     const incomesData = await incomeResponse.json();
+    console.log("Income data:", incomesData);
     const months = incomesData.map(item => item.month);
     const totalIncome = incomesData.map(item => item.totalIncome);
-    console.log("Income data:", incomesData);
+
 
     // Render Income Line Graph
     new Chart(document.getElementById('myAreaChart'), {
