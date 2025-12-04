@@ -227,8 +227,9 @@ function recordIncome() {
         const popup = document.querySelector('.form-popup');
         if (popup && popup.parentNode) {
             popup.parentNode.removeChild(popup); // remove from actual parent
+            updateDashboard();
         }
-        updateDashboard();
+
     });
 
     document.getElementById('submitIncome').addEventListener('click', submitIncome);
@@ -310,18 +311,12 @@ function recordExpenses() {
         <button type="button" id="closeExpenseForm" class="btn">Cancel</button>
     </div>`;
     showFormPopup(formHTML, 0.7); // you can tweak the scale value
-    document.getElementById('closeIncomeForm').addEventListener('click', () => {
-        const popup = document.querySelector('.form-popup');
-        if (popup) document.body.removeChild(popup);
-        updateDashboard();
-    });
 
-    // Event listeners for close button
+
     document.getElementById('closeExpenseForm').addEventListener('click', () => {
         const popup = document.querySelector('.form-popup');
         if (popup) document.body.removeChild(popup);
         updateDashboard();
-
     });
     document.getElementById('submitExpense').addEventListener('click', submitExpense);
 }
