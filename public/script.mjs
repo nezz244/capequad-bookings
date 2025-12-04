@@ -284,7 +284,6 @@ function submitIncome() {
         .then(response => {
             return response.json();
         })
-
         .then(() => {
             alert('Income added successfully!');
             updateDashboard()
@@ -321,6 +320,6 @@ function recordExpenses() {
             updateDashboard();
         }
     });
-    
+
     document.getElementById('submitExpense').addEventListener('click', submitExpense);
 }
