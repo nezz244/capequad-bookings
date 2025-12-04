@@ -281,14 +281,12 @@ function submitIncome() {
         },
         body: JSON.stringify(newIncome)
     })
-        .then(response => {
-             response.json();
-        })
+        .then(response => response.json())
         .then(async () => {
             alert('Income added successfully!');
             await updateDashboard()
         })
-        .catch(error => console.error('Error adding new income:', error));
+        .catch(error => console.error('Error adding new expense:', error));
 }
 function recordExpenses() {
     const formHTML = `
