@@ -70,7 +70,7 @@ app.post('/expenses', async (req, res) => {
     try {
         // Insert into the database
         await db.query('INSERT INTO expenses (expense_name, amount, expense_date, notes) VALUES (?, ?, ?, ?)', [name, amount, date, notes]);
-        res.json({ success: true });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error recording expense' });
@@ -128,7 +128,6 @@ app.get('/chacco/incomes/data', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch income data' });
     }
 });
-
 app.post('/incomes', async (req, res) => {
     try {
         const { name, amount, date, notes } = req.body;
@@ -150,13 +149,15 @@ app.post('/incomes', async (req, res) => {
             return res.status(400).json({ error: 'Notes must be a valid string.' });
         }
 
-        // If validation passed, proceed with the query
+        // Insert into the database using await
         const query = 'INSERT INTO incomes (name, amount, date, notes) VALUES (?, ?, ?, ?)';
-        db.query(query, [name, amount, date, notes], (err, result) => {
-            if (err) throw err;
-            res.json({ message: 'Income added successfully', id: result.insertId });
-        });
+        await db.query(query, [name, amount, date, notes]);
+
+        // Success response
+        res.json({ success: true });
+
     } catch (error) {
+        console.error('Error inserting income:', error);
         res.status(500).json({ error: 'Database insertion failed' });
     }
 });
