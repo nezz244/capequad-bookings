@@ -282,16 +282,19 @@ function submitIncome() {
     })
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
-            // Some APIs return no content (204), so skip JSON parsing if empty
             return response.status !== 204 ? response.json() : {};
         })
         .then(() => {
             alert('Income added successfully!');
+            // Close the overlay
+            const overlay = document.getElementById('incomeFormOverlay');
+            if (overlay) overlay.style.display = 'none';
             // Refresh the page
             location.reload();
         })
         .catch(error => console.error('Error adding new income:', error));
 }
+
 
 function recordExpenses() {
     const formHTML = `
