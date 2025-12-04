@@ -177,7 +177,7 @@ function handleDetailsButtonClick(event) {
 }
 function attachListeners() {
 document.getElementById('expensesButton').addEventListener('click', recordExpenses);
-document.getElementById('income').addEventListener('click', recordIncome);
+document.getElementById('incomeButton').addEventListener('click', recordIncome);
 
     //document.getElementById('logoutButton').addEventListener('click', logoutUser);
 }
