@@ -275,7 +275,7 @@ function submitIncome() {
         notes: incomeNotes,
     };
 
-    fetch('https://www.chaccooffice.org/incomes', {
+    fetch('incomes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newIncome)
