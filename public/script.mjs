@@ -275,20 +275,19 @@ function submitIncome() {
         notes: incomeNotes,
     };
 
-    fetch('/incomes', {
+    fetch('https://www.chaccooffice.org/incomes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newIncome)
     })
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
-            // Some APIs return no content (204), so skip JSON parsing if empty
+            // Only parse JSON if there is a body
             return response.status !== 204 ? response.json() : {};
         })
         .then(() => {
             alert('Income added successfully!');
-            // Refresh the page
-            location.reload();
+            updateDashboard();
         })
         .catch(error => console.error('Error adding new income:', error));
 }
