@@ -313,10 +313,16 @@ function recordExpenses() {
     showFormPopup(formHTML, 0.7); // you can tweak the scale value
 
 
+    // Event listeners for close button
     document.getElementById('closeExpenseForm').addEventListener('click', () => {
         const popup = document.querySelector('.form-popup');
-        if (popup) document.body.removeChild(popup);
-        updateDashboard();
+        if (popup && popup.parentNode) {
+            popup.parentNode.removeChild(popup); // remove from actual parent
+            updateDashboard();
+        }
+    });
+
+
     });
     document.getElementById('submitExpense').addEventListener('click', submitExpense);
 }
