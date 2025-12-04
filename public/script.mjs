@@ -269,25 +269,30 @@ function submitIncome() {
     const incomeNotes = document.getElementById('incomeNotes').value;
 
     const newIncome = {
-        name: incomeName,  // Change from 'expenseName' to 'name'
-        amount: parseFloat(incomeAmount),  // 'amount' is already correct
-        date: incomeDate,  // Change from 'expenseDate' to 'date'
-        notes: incomeNotes,  // Change from 'expenseNotes' to 'notes'
+        name: incomeName,
+        amount: parseFloat(incomeAmount),
+        date: incomeDate,
+        notes: incomeNotes,
     };
+
     fetch('/incomes', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newIncome)
     })
-        .then(response => response.json())
-        .then(async () => {
-            alert('Income added successfully!');
-            await updateDashboard()
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            // Some APIs return no content (204), so skip JSON parsing if empty
+            return response.status !== 204 ? response.json() : {};
         })
-        .catch(error => console.error('Error adding new expense:', error));
+        .then(() => {
+            alert('Income added successfully!');
+            // Refresh the page
+            location.reload();
+        })
+        .catch(error => console.error('Error adding new income:', error));
 }
+
 function recordExpenses() {
     const formHTML = `
     <div class="form-popup">
