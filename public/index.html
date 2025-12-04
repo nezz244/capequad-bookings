@@ -239,15 +239,19 @@
                         });
                     });
                 } else {
-                    data.forEach(client => {
-                        transactions.push({
-                            transactionName: client.client_name,
-                            income: null,
-                            expense: null,
-                            date: new Date(client.transaction_date),
-                            notes: ''
-                        });
-                    });
+                    console.log(non);
+                    /*
+        data.forEach(client => {
+            transactions.push({
+                transactionName: null,
+                income: null,
+                expense: null,
+                date: null,
+                notes: ''
+            });
+        });
+        */
+
                 }
 
                 transactions.sort((a, b) => a.date - b.date);
