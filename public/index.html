@@ -219,26 +219,6 @@
                 let transactions = [];
 
                 if (filter === 'currentBalance') {
-                    data.clients.forEach(client => {
-                        transactions.push({
-                            transactionName: `${client.client_name} Initial Payment`,
-                            income: client.amount_paid,
-                            expense: null,
-                            date: new Date(client.date_joined),
-                            notes: ''
-                        });
-                    });
-
-                    data.installments.forEach(installment => {
-                        transactions.push({
-                            transactionName: `${installment.client_name} Installment`,
-                            income: installment.amount,
-                            expense: null,
-                            date: new Date(installment.installment_date),
-                            notes: ''
-                        });
-                    });
-
                     data.expenses.forEach(expense => {
                         transactions.push({
                             transactionName: expense.expense_name,
