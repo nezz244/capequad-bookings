@@ -153,8 +153,6 @@ app.get('/chacco/balance_breakdown/all', async (req, res) => {
 
         // 👇 Aggregate data into a single object
         const responseData = {
-            clients: clientsData,
-            installments: installmentsData,
             incomes: incomesData,
             expenses: expensesData
 
