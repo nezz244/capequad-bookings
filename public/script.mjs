@@ -6,8 +6,8 @@ function closePopup() {
     }
 }
 // Attach event listeners on page load
-document.addEventListener('DOMContentLoaded', () => {
-    updateDashboard();
+document.addEventListener('DOMContentLoaded', async () => {
+    await updateDashboard();
     attachListeners();
     enableSearch(); // Initialize the search functionality
 });
@@ -223,11 +223,11 @@ function recordIncome() {
     showFormPopup(formHTML, 0.7); // you can tweak the scale value
 
     // Event listeners for close button
-    document.getElementById('closeIncomeForm').addEventListener('click', () => {
+    document.getElementById('closeIncomeForm').addEventListener('click', async () => {
         const popup = document.querySelector('.form-popup');
         if (popup && popup.parentNode) {
             popup.parentNode.removeChild(popup); // remove from actual parent
-            updateDashboard();
+            await updateDashboard();
         }
 
     });
@@ -256,9 +256,9 @@ function submitExpense() {
         body: JSON.stringify(newExpense)
     })
         .then(response => response.json())
-        .then(() => {
+        .then(async () => {
             alert('Expense added successfully!');
-            updateDashboard()
+            await updateDashboard()
         })
         .catch(error => console.error('Error adding new expense:', error));
 }
@@ -284,9 +284,9 @@ function submitIncome() {
         .then(response => {
             return response.json();
         })
-        .then(() => {
+        .then(async () => {
             alert('Income added successfully!');
-            updateDashboard()
+            await updateDashboard()
         })
         .catch(error => console.error('Error adding new income:', error));
 }
@@ -313,11 +313,11 @@ function recordExpenses() {
 
 
     // Event listeners for close button
-    document.getElementById('closeExpenseForm').addEventListener('click', () => {
+    document.getElementById('closeExpenseForm').addEventListener('click', async () => {
         const popup = document.querySelector('.form-popup');
         if (popup && popup.parentNode) {
             popup.parentNode.removeChild(popup); // remove from actual parent
-            updateDashboard();
+            await updateDashboard();
         }
     });
 
