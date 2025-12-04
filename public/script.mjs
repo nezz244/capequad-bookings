@@ -184,7 +184,7 @@ document.getElementById('incomeButton').addEventListener('click', recordIncome);
 async function updateDashboard() {
         try {
             // Fetch the total income from other sources
-            const incomeResponse = await fetch('https://www.chaccooffice.org/chacco/incomes/total');
+            const incomeResponse = await fetch('/chacco/incomes/total');
             const totalIncomeData = await incomeResponse.json();
             const totalIncome = parseFloat(totalIncomeData.totalIncome) || 0;
             console.log("total income",totalIncome);
@@ -269,7 +269,7 @@ function submitIncome() {
         date: incomeDate,  // Change from 'expenseDate' to 'date'
         notes: incomeNotes,  // Change from 'expenseNotes' to 'notes'
     };
-    fetch('https://www.chaccooffice.org/incomes', {
+    fetch('/incomes', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
