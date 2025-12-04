@@ -160,6 +160,19 @@ app.post('/incomes', async (req, res) => {
         res.status(500).json({ error: 'Database insertion failed' });
     }
 });
+app.get('/chacco/incomes/total', async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT SUM(amount) AS totalIncome FROM incomes
+        `);
+
+        const totalIncome = rows[0].totalIncome || 0;
+        res.json({ totalIncome });
+    } catch (error) {
+        console.error('Error fetching total income:', error);
+        res.status(500).json({ error: 'Failed to fetch total income' });
+    }
+});
 
 app.get('/chacco/balance_breakdown/all', async (req, res) => {
     try {
