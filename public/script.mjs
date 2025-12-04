@@ -282,7 +282,7 @@ function submitIncome() {
         body: JSON.stringify(newIncome)
     })
         .then(response => {
-            return response.json();
+             response.json();
         })
         .then(async () => {
             alert('Income added successfully!');
