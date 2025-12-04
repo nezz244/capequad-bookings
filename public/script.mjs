@@ -187,10 +187,11 @@ async function updateDashboard() {
             const incomeResponse = await fetch('https://www.chaccooffice.org/chacco/incomes/total');
             const totalIncomeData = await incomeResponse.json();
             const totalIncome = parseFloat(totalIncomeData.totalIncome) || 0;
-
+            console.log("total income",totalIncome);
             // Fetch the total expenses
             const expensesResponse = await fetch('/chacco/expenses/total');
             const expensesTotal = await expensesResponse.json();
+            console.log("expensesTotal",expensesTotal);
 
             // ✅ Calculate total balance
             const totalBalance =  totalIncome - expensesTotal.total;
