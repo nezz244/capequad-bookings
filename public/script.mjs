@@ -321,8 +321,6 @@ function recordExpenses() {
             updateDashboard();
         }
     });
-
-
-    });
+    
     document.getElementById('submitExpense').addEventListener('click', submitExpense);
 }
