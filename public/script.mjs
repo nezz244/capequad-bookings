@@ -225,9 +225,12 @@ function recordIncome() {
     // Event listeners for close button
     document.getElementById('closeIncomeForm').addEventListener('click', () => {
         const popup = document.querySelector('.form-popup');
-        if (popup) document.body.removeChild(popup);
+        if (popup && popup.parentNode) {
+            popup.parentNode.removeChild(popup); // remove from actual parent
+        }
         updateDashboard();
     });
+
     document.getElementById('submitIncome').addEventListener('click', submitIncome);
 }
 // Submit New Client Data
