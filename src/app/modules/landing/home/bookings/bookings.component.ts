@@ -104,15 +104,15 @@ nature reserve entry permit of R250
             dates: ['Mon','Tue','Wed','Thur','Fri','Sat'],
             imgUrl: 'assets/images/activities/15.jpeg',
             gallery: [
-                'assets/images/activities/jeep1.avif',
-                'assets/images/activities/jeep2.avif',
-                'assets/images/activities/jeep3.avif',
-                'assets/images/activities/jeep4.avif',
-                'assets/images/activities/jeep5.avif',
-                'assets/images/activities/jeep6.avif',
-                'assets/images/activities/jeep7.avif',
-                'assets/images/activities/jeep8.avif',
-                'assets/images/activities/jeep9.avif'
+                'assets/images/activities/jeep1.jpeg',
+                'assets/images/activities/jeep2.jpeg',
+                'assets/images/activities/jeep3.jpeg',
+                'assets/images/activities/jeep4.jpeg',
+                'assets/images/activities/jeep5.jpeg',
+                'assets/images/activities/jeep6.jpeg',
+                'assets/images/activities/jeep7.jpeg',
+                'assets/images/activities/jeep8.jpeg',
+                'assets/images/activities/jeep9.jpeg'
             ]
         },
         {
