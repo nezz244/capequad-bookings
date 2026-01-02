@@ -12,6 +12,11 @@ import { mockApiServices } from 'app/mock-api';
 import { LayoutModule } from 'app/layout/layout.module';
 import { AppComponent } from 'app/app.component';
 import { appRoutes } from 'app/app.routing';
+import { CommonModule } from '@angular/common';
+import { MatDialogModule } from '@angular/material/dialog';
+import { BookingsComponent } from './modules/landing/home/bookings/bookings.component';
+import { ActivityGalleryPopupComponent } from './modules/landing/home/activity-gallery-popup/activity-gallery-popup.component';
+
 
 const routerConfig: ExtraOptions = {
     preloadingStrategy       : PreloadAllModules,
@@ -21,10 +26,13 @@ const routerConfig: ExtraOptions = {
 @NgModule({
     declarations: [
         AppComponent,
-       
-        
+        ActivityGalleryPopupComponent
+
+
     ],
     imports     : [
+        CommonModule,
+        MatDialogModule,
         BrowserModule,
         BrowserAnimationsModule,
         RouterModule.forRoot(appRoutes, routerConfig),

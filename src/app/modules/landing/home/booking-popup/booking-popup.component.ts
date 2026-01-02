@@ -1,189 +1,166 @@
-import { ChangeDetectorRef, Component, OnInit,ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { ChangeDetectorRef, Component, OnInit, ViewChild, Inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Validators } from 'ngx-editor';
-import { FormControl } from '@angular/forms';
 import { ThemePalette } from '@angular/material/core';
 import { GoogleApiService } from 'ng-gapi';
 import { SearchCountryField, CountryISO, PhoneNumberFormat } from 'ngx-intl-tel-input';
-import { totalmem } from 'os';
 import { AuthService } from 'app/core/auth/auth.service';
 
-
 @Component({
-  selector: 'app-booking-popup',
-  templateUrl: './booking-popup.component.html',
-  styleUrls: ['./booking-popup.component.scss']
+    selector: 'app-booking-popup',
+    templateUrl: './booking-popup.component.html',
+    styleUrls: ['./booking-popup.component.scss']
 })
 export class BookingPopupComponent implements OnInit {
 
-  isLoading : boolean = false;
+    isLoading: boolean = false;
 
-  config ={useBothWheelAxes: false, suppressScrollX: true, suppressScrollY: false}
+    config = { useBothWheelAxes: false, suppressScrollX: true, suppressScrollY: false };
 
-  @ViewChild('picker') picker: any;
+    @ViewChild('picker') picker: any;
 
-  calendarApi;
+    public dateControl = new FormControl(new Date());
 
-  gapi : any;
+    bookingForm: FormGroup;
+    activity: any;
 
-  public date: any;
-  public disabled = false;
-  public showSpinners = true;
-  public showSeconds = false;
-  public touchUi = false;
-  public enableMeridian = false;
-  public minDate: any;
-  public maxDate: any;
-  public stepHour = 1;
-  public stepMinute = 1;
-  public stepSecond = 1;
-  public color: ThemePalette = 'primary';
+    // Phone settings
+    separateDialCode = false;
+    SearchCountryField = SearchCountryField;
+    CountryISO = CountryISO;
+    PhoneNumberFormat = PhoneNumberFormat;
+    preferredCountries: CountryISO[] = [CountryISO.UnitedStates, CountryISO.UnitedKingdom];
 
-  
-  public dateControl = new FormControl(new Date());
-  public dateControlMinMax = new FormControl(new Date());
+    constructor(
+        private fb: FormBuilder,
+        private _snackBar: MatSnackBar,
+        private gapiService: GoogleApiService,
+        private cd: ChangeDetectorRef,
+        private main: AuthService,
+        public matDialogRef: MatDialogRef<BookingPopupComponent>,
+        @Inject(MAT_DIALOG_DATA) public data: any
+    ) {
 
-  public options = [
-    { value: true, label: 'True' },
-    { value: false, label: 'False' }
-  ];
+        // Form initialization
+        this.bookingForm = this.fb.group({
+            email: ['', [Validators.required, Validators.email]],
+            fullName: ['', [Validators.required]],
+            numberOfPeople: [1, [Validators.required, Validators.min(1)]],
+            phoneNumber: [''],           // No Angular required validator for ngx-intl-tel-input
+            transportOption: ['']        // '', 'class', 'vclass'
+        });
 
-  public listColors = ['primary', 'accent', 'warn'];
-
-  public stepHours = [1, 2, 3, 4, 5];
-  public stepMinutes = [1, 5, 10, 15, 20, 25];
-  public stepSeconds = [1, 5, 10, 15, 20, 25];
-
-  bookingForm : FormGroup;
-  activity : any;
-
-  
-
-   //phone numbers
-   separateDialCode = false;
-   SearchCountryField = SearchCountryField;
-   CountryISO = CountryISO;
-   PhoneNumberFormat = PhoneNumberFormat;
-   preferredCountries: CountryISO[] = [CountryISO.UnitedStates, CountryISO.UnitedKingdom];
-  
-
-  constructor(private fb: FormBuilder,private _snackBar : MatSnackBar,
-    private gapiService: GoogleApiService, 
-    private cd : ChangeDetectorRef,private main : AuthService,
-    public matDialogRef: MatDialogRef<BookingPopupComponent>) { 
-
-    this.bookingForm = this.fb.group({
-      email: ['',[Validators.required]],
-      fullName:['',[Validators.required]],
-      numberOfPeople :[1,[Validators.required]],
-      phoneNumber  : ['',[Validators.required]],
-      transport : [false,[Validators.required]],
-    });
-
-     // First make sure gapi is loaded can be in AppInitilizer
-    //  this.gapiService.onLoad().subscribe(() => this.loadGapiClient());
-
-  }
-
-  ngOnInit(): void {
-      this.activity = JSON.parse(localStorage.getItem('activity'));
-  }
-
-
-  // loadGapiClient() {
-  //   gapi.load('client', async () => {
-  //     await gapi.client.load('calendar', 'v3');
-  //     this.calendarApi = (gapi.client as any).calendar;
-      
-  //   });
-  // }
-
-
-  try(){
-    console.log(this.f.phoneNumber.value);
-    this.cd.detectChanges();
-    console.log(this.dateControl.value);
-  }
-
-
-  saveAndClose(){
-    this.matDialogRef.close();
-
-  }
-
-  openSnackBar(message: string, action: string) {
-    this._snackBar.open(message, action, {
-      duration: 3000,
-    });
-  }
-
-  get f(){return this.bookingForm.controls};
-
-  checkNumber(){
-    if(this.f.numberOfPeople.value == -1){
-        this.f.numberOfPeople.setValue(1);
-        this.openSnackBar('Minimum number of people is 1','Close');
     }
-  }
 
-  checkout(){
-   
-  if(this.bookingForm.valid && this.f.phoneNumber.value !=null ){
-    this.isLoading = true;
-    this.cd.detectChanges();
-    //CALCULATE TOTAL FIRST
-    if(this.f.transport.value==false){
-      var total = this.activity.price * this.f.numberOfPeople.value;
-    }else{
-      var total = this.activity.price * this.f.numberOfPeople.value + (500*this.f.numberOfPeople.value)
+    ngOnInit(): void {
+        this.activity = this.data;
+
+        // Enforce capacity rules when transport option changes
+        this.f.transportOption.valueChanges.subscribe(() => {
+            this.checkNumber();
+        });
     }
-    
-    
-    var dto = {
-      phoneNumber:this.f.phoneNumber.value.e164Number,
-      email : this.f.email.value,
-      date : this.dateControl.value,
-      fullName : this.f.fullName.value,
-      totalTickets : this.f.numberOfPeople.value,
-      totalCost : total,
-      transport : this.f.transport.value,
-      service : this.activity.title
-    
-    } 
-    //add a payment ref
 
-    console.log(dto);
+    // Shortcut to form controls
+    get f() {
+        return this.bookingForm.controls;
+    }
 
-    this.main.triggerCheckout(dto).subscribe(data => {   
-      console.log(data);
-      if(data.data.status=='created'){
-        localStorage.setItem('payment',JSON.stringify(data.data));
-        localStorage.setItem('booking',JSON.stringify(dto));
-        this.isLoading = false;
+    saveAndClose() {
+        this.matDialogRef.close();
+    }
+
+    openSnackBar(message: string, action: string) {
+        this._snackBar.open(message, action, { duration: 3000 });
+    }
+
+    // Enforce passenger limits
+    checkNumber() {
+        const people = this.f.numberOfPeople.value;
+        const option = this.f.transportOption.value;
+
+        if (people < 1) {
+            this.f.numberOfPeople.setValue(1);
+            this.openSnackBar('Minimum number of people is 1', 'Close');
+        }
+
+        if (option === 'class' && people > 3) {
+            this.f.numberOfPeople.setValue(3);
+            this.openSnackBar('Mercedes Benz Class allows only 3 passengers', 'Close');
+        }
+
+        if (option === 'vclass' && people > 8) {
+            this.f.numberOfPeople.setValue(8);
+            this.openSnackBar('Mercedes Benz V-Class allows only 8 passengers', 'Close');
+        }
+    }
+
+    // Calculate total cost including transport
+    getTotalPrice(): number {
+        const base = this.activity.price * this.f.numberOfPeople.value;
+        const option = this.f.transportOption.value;
+
+        let transportFee = 0;
+        if (option === 'class') transportFee = 1000;
+        if (option === 'vclass') transportFee = 1750;
+
+        return base + transportFee;
+    }
+
+    // Production-ready checkout
+    checkout() {
+
+        this.bookingForm.markAllAsTouched();
+        const phone = this.f.phoneNumber.value;
+
+        // Validate form fields
+        if (!this.bookingForm.valid) {
+            this.openSnackBar('Please complete all required fields', 'Close');
+            return;
+        }
+
+        // Validate phone number object
+        if (!phone || !phone.e164Number) {
+            this.openSnackBar('Please enter a valid phone number', 'Close');
+            return;
+        }
+
+        // Passed all validations — proceed
+        this.isLoading = true;
         this.cd.detectChanges();
-        window.open(data.data.redirectUrl,'_self');
-      }else{
-        this.openSnackBar('Something went wrong, try again later.','Close');
-        this.isLoading = false;
-        this.cd.detectChanges();
-      }
-      
-    }) 
 
+        const total = this.getTotalPrice();
 
+        const dto = {
+            phoneNumber: phone.e164Number,
+            email: this.f.email.value,
+            date: this.dateControl.value,
+            fullName: this.f.fullName.value,
+            totalTickets: this.f.numberOfPeople.value,
+            totalCost: total,
+            transport: this.f.transportOption.value,
+            service: this.activity.title
+        };
 
+        console.log('Booking DTO:', dto);
 
-  }else{
-    this.openSnackBar('Please fill out form','Close');
-    this.isLoading = false;
-    this.cd.detectChanges();
-  }
+        this.main.triggerCheckout(dto).subscribe(data => {
 
-}
+            if (data.data.status === 'created') {
+                localStorage.setItem('payment', JSON.stringify(data.data));
+                localStorage.setItem('booking', JSON.stringify(dto));
+                this.isLoading = false;
+                this.cd.detectChanges();
+                window.open(data.data.redirectUrl, '_self');
+            } else {
+                this.openSnackBar('Something went wrong, try again later.', 'Close');
+                this.isLoading = false;
+                this.cd.detectChanges();
+            }
 
+        });
 
-
+    }
 
 }

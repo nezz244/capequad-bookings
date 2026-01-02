@@ -1,219 +1,108 @@
-<div class="flex flex-col  md:w-140 md:min-h-160  md:max-h-160 w-full h-full px-5 md:px-0 overflow-auto"
-style="position: relative;max-height: 90vh !important;" [perfectScrollbar]="config"
->
+<div class="flex flex-col md:w-140 md:min-h-160 md:max-h-160 w-full h-full px-5 md:px-0 overflow-auto"
+     style="position: relative; max-height: 90vh !important;"
+     [perfectScrollbar]="config">
 
     <!-- Header -->
-     <div class="flex  flex-0 items-center justify-between  h-16 pr-3 sm:pr-5  sm:pl-8  text-on-primary">
-         <div class="text-dark">
+    <div class="flex flex-0 items-center justify-between h-16 pr-3 sm:pr-5 sm:pl-8 text-on-primary">
+        <div class="text-dark">
             <div class="sm:text-3xl text-md text-headers">
-                Booking {{activity?.title}} .
-           </div>
-         </div>
-         <button
-             mat-icon-button
-             (click)="saveAndClose()"
-             [tabIndex]="-1">
-             <i class="ph-bold ph-x icon-size-6 text-accent-900"></i>
-         </button>
-
-     </div>
-     <!--end header-->
-
-
-     <div>
-         <form [formGroup]="bookingForm"  class="grid grid-cols-6 gap-6  sm:mx-10 md:mt-5 ">
-            <div class="col-span-6 ">
-                        <!-- <div class="" (click)="try()">
-                            try
-                        </div> -->
-                    <div class="col-span-6 ">
-                        <label class="mb-2">
-                            Your full name
-                        </label>
-                    </div>
-
-                    <div class="col-span-6  mt-2 focus:ring rounded-md border border-accent-900  min-h-12  shadow-primary">
-
-                        <input
-
-                        matInput
-                        type="email"
-                        id="name"
-                        class="mt-2  pl-2 text-lg  rounded-md  w-full "
-                        placeholder=""
-                        [formControlName]="'fullName'">
-                    </div>
-                </div>
-                <div class="col-span-6  md:col-span-3">
-
-                <div class="col-span-6 mb-2">
-                    <label class="">
-                        Your phone number
-                    </label>
-                </div>
-
-            <div class="col-span-6 mt-2 ">
-
-                <ngx-intl-tel-input
-                    [cssClass]="'custom'"
-                    [enableAutoCountrySelect]="false"
-                    [enablePlaceholder]="true"
-                    [searchCountryFlag]="true"
-                    [searchCountryField]="[SearchCountryField.Iso2, SearchCountryField.Name]"
-                    [selectFirstCountry]="false"
-                    [selectedCountryISO]="CountryISO.SouthAfrica"
-                    [maxLength]="15"
-                    [phoneValidation]="true"
-                    name="phone"
-                    formControlName="phoneNumber"
-                ></ngx-intl-tel-input>
-                <!-- [inputId]="my-input-id" -->
-
+                Booking {{activity?.title}}
             </div>
-                </div>
-                <div class="col-span-6  md:col-span-3 -mt-5 md:mt-0">
-                    <div class="col-span-5">
-                        <label class="">
-                            Your email address
-                        </label>
-                    </div>
-                    <div class="col-span-5 mt-1.5 focus:ring rounded-md border border-accent-900">
+        </div>
 
-                        <input
-
-                        matInput
-                        type="text"
-                        id="email"
-                        class=" pl-2 text-lg  w-full h-12  shadow-primary"
-                        placeholder=""
-                        [formControlName]="'email'">
-                    </div>
-            </div>
-
-
-
-                <div class="col-span-6 md:-mt-5">
-                    <div class="grid grid-cols-6">
-                        <div class="col-span-6 md:col-span-3">
-                            <label class="mb-2">
-                                Number of tickets
-                            </label>
-                        </div>
-                        <div class="col-span-6 md:col-span-3 -ml-2 md:ml-0 my-2 md:my-0">
-                            <div class="flex flex-inline">
-                                <div>
-                                    <label class="switch scale-75">
-                                        <input  [formControlName]="'transport'" type="checkbox">
-                                        <span class="slider round"></span>
-                                    </label>
-                                    <!-- <input
-
-                                    checkbox
-                                    type="checkbox"
-                                    id="transport"
-                                    class="mt-2  pl-2 text-lg  rounded-md  w-full "
-                                    placeholder=""
-                                    [formControlName]="'transport'"> -->
-                                </div>
-                                <div class="ml-2 mt-1.5 font-bold text-sm md:text-md">
-                                    Transport From Capetown And Return (R 500 / each)
-                                </div>
-                            </div>
-
-
-
-                        </div>
-                    </div>
-
-                    <div class="mt-2 flex flex-inline border border-accent-900 rounded-md">
-                        <div class="w-2/4 md:w-3/4">
-                            <input
-
-                            matInput
-                            (change)="checkNumber()"
-                            class=" pl-5 mr-1 text-lg   w-full min-h-12  shadow-primary"
-                            type="number"
-                            id="number"
-                            placeholder=""
-                            [formControlName]="'numberOfPeople'">
-
-                        </div>
-                        <div class="w-2/4 md:w-1/4">
-
-                            <div class="text-dark font-bold mt-3 md:mt-3">
-                                <span class="text-gray-500 text-xs sm:text-sm sm:ml-1 ml-2">ZAR</span>
-                                <span *ngIf="f.transport.value==false" class="text-sm sm:text-xl md:text-xl lg:text-md ml-5"> {{activity?.price * f.numberOfPeople.value}}</span>
-                                <span *ngIf="f.transport.value==true" class="text-sm sm:text-xl md:text-xl lg:text-md ml-5"> {{activity?.price * f.numberOfPeople.value + (500*f.numberOfPeople.value)}}</span>
-
-                            </div>
-
-                        </div>
-                    </div>
-
-
-                </div>
-                <div class="col-span-6  mb-1">
-                    <label class=" ">
-                    Pick date & time 10am - 5pm
-                    </label>
-                </div>
-
-                <div class="col-span-6  flex flex-inline border border-accent-900 h-12  rounded-lg ">
-
-                    <div class="w-4/5">
-
-                        <input  class="mt-3 text-md ml-2" matInput [ngxMatDatetimePicker]="picker" placeholder="Choose a date" [formControl]="dateControl"
-                        [min]="minDate" [max]="maxDate" >
-                        <ngx-mat-datetime-picker #picker [showSpinners]="showSpinners" [showSeconds]="showSeconds"
-                                [stepHour]="stepHour" [stepMinute]="stepMinute" [stepSecond]="stepSecond" [touchUi]="touchUi"
-                                [color]="color" [enableMeridian]="enableMeridian">
-                        </ngx-mat-datetime-picker>
-
-                    </div>
-                    <div class="w-1/5">
-                        <div class="ml-1 sm:ml-5 md:ml-5  mt-1">
-                            <mat-datepicker-toggle matSuffix [for]="picker">
-                                <mat-icon matDatepickerToggleIcon>
-
-                                    <i class="amimate pulse ph ph-calendar icon-size-5 text-dark"></i>
-                                </mat-icon>
-
-                            </mat-datepicker-toggle>
-
-                        </div>
-                    </div>
-
-                </div>
-
-
-
-                <div class="col-span-6  flex flex-inline mt-2 mb-10">
-                    <div class="">
-                        <button (click)="checkout()" class="mt-2 md:mt-5 mb-5  text-headers mat-flat-button bg-purple-900  text-headers text-white rounded-md md:px-10">
-                        Continue to payment
-                            <i  *ngIf="!isLoading" class="ph ph-arrow-right icon-size-5 ml-1"></i>
-                            <mat-progress-spinner
-                            *ngIf="isLoading"
-                            [diameter]="18"
-                            [mode]="'indeterminate'"
-                            [color]="accent"
-                            class="m-1"
-                            >
-                            </mat-progress-spinner>
-                        </button>
-                    </div>
-                    <div (click)="saveAndClose()" class="hidden  underline sm:block md:block lg:block cursor-pointer mt-10 ml-auto items-end text-warn-700">
-                        Cancel
-                    </div>
-
-                </div>
-
-
-
-
-        </form>
+        <button mat-icon-button (click)="saveAndClose()" [tabIndex]="-1">
+            <i class="ph-bold ph-x icon-size-6 text-accent-900"></i>
+        </button>
     </div>
+    <!-- End Header -->
 
+    <form [formGroup]="bookingForm" class="grid grid-cols-6 gap-6 sm:mx-10 md:mt-5">
 
+        <!-- Full Name -->
+        <div class="col-span-6">
+            <label class="mb-2">Your full name</label>
+            <input matInput class="mt-2 pl-2 text-lg rounded-md w-full border border-accent-900 h-12"
+                   formControlName="fullName">
+        </div>
 
+        <!-- Phone -->
+        <div class="col-span-6 md:col-span-3">
+            <label>Your phone number</label>
+            <ngx-intl-tel-input
+                class="mt-2"
+                [enableAutoCountrySelect]="false"
+                [searchCountryFlag]="true"
+                [selectedCountryISO]="CountryISO.SouthAfrica"
+                [maxLength]="15"
+                [phoneValidation]="false"
+                formControlName="phoneNumber">
+            </ngx-intl-tel-input>
+        </div>
+
+        <!-- Email -->
+        <div class="col-span-6 md:col-span-3">
+            <label>Your email address</label>
+            <input matInput class="mt-2 pl-2 text-lg w-full h-12 border border-accent-900"
+                   formControlName="email">
+        </div>
+
+        <!-- Tickets -->
+        <div class="col-span-6 md:col-span-3">
+            <label>Number of tickets</label>
+            <input type="number"
+                   (change)="checkNumber()"
+                   class="mt-2 pl-2 text-lg w-full h-12 border border-accent-900"
+                   formControlName="numberOfPeople">
+        </div>
+
+        <!-- Transport -->
+        <div class="col-span-6 md:col-span-3">
+            <label>Transport option</label>
+            <select class="mt-2 w-full h-12 border border-accent-900 rounded-md pl-3"
+                    formControlName="transportOption">
+                <option value="">No Transport</option>
+                <option value="class">Mercedes Benz Class (3 pax) — R1000 Return</option>
+                <option value="vclass">Mercedes Benz V-Class (8 pax) — R1750 Return</option>
+            </select>
+        </div>
+
+        <!-- Total -->
+        <div class="col-span-6 flex justify-end border border-accent-900 rounded-md p-4">
+            <span class="text-gray-500 mr-2">ZAR</span>
+            <span class="text-xl font-bold">{{ getTotalPrice() }}</span>
+        </div>
+
+        <!-- Date -->
+        <div class="col-span-6">
+            <label>Pick date & time (10am - 5pm)</label>
+            <div class="flex border border-accent-900 h-12 rounded-lg mt-2">
+                <input matInput
+                       class="ml-3 w-full"
+                       [ngxMatDatetimePicker]="picker"
+                       [formControl]="dateControl">
+
+                <ngx-mat-datetime-picker #picker></ngx-mat-datetime-picker>
+
+                <mat-datepicker-toggle matSuffix [for]="picker">
+                    <mat-icon matDatepickerToggleIcon>
+                        <i class="ph ph-calendar icon-size-5 text-dark"></i>
+                    </mat-icon>
+                </mat-datepicker-toggle>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="col-span-6 flex mt-6">
+            <button (click)="checkout()"
+                    class="bg-purple-900 text-white rounded-md px-10 py-2">
+                Continue to payment
+            </button>
+
+            <div (click)="saveAndClose()"
+                 class="underline cursor-pointer ml-auto mt-2 text-warn-700">
+                Cancel
+            </div>
+        </div>
+
+    </form>
 </div>

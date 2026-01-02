@@ -1,0 +1,26 @@
+<div class="relative bg-white rounded-xl p-6">
+
+    <button
+        class="absolute top-3 right-3 text-2xl text-gray-600 hover:text-black"
+        (click)="close()">✕</button>
+
+    <h2 class="text-2xl font-bold mb-2">{{data.title}}</h2>
+
+    <div [innerHTML]="data.fullDescription"></div>
+
+
+    <div class="text-sm text-indigo-700 mb-4">
+        {{data.timeStart}} – {{data.timeEnd}}
+    </div>
+
+    <div class="flex space-x-4 overflow-x-auto pb-4">
+        <img *ngFor="let img of data.gallery"
+             [src]="img"
+             class="h-40 w-64 object-cover rounded-lg shadow-md flex-shrink-0">
+    </div>
+
+    <div class="mt-5 text-xl font-semibold text-purple-900">
+        ZAR {{data.price}} / person
+    </div>
+
+</div>

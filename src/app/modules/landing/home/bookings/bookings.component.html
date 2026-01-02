@@ -1,58 +1,75 @@
 <div class="w-full h-full bg-dark p-5">
- <div  class="text-white text-headers font-bold text-center text-3xl sm:text-9xl mt-5">
-    Select an activity
- </div>
- <div class="sm:text-xl text-sm  text-center text-white">
-    Please pick an activity below to book .
- </div>
+    <div class="text-white text-headers font-bold text-center text-3xl sm:text-9xl mt-5">
+        Select an activity
+    </div>
 
- <div class="mt-5 sm:mt-15 mx-10">
-    <div class="grid grid-cols-2 gap-6 sm:mx-10 md:mx-60">
-        <div *ngFor="let activity of activities" class="shadow col-span-2 sm:col-span-1 md:col-span-1 lg:col-span-1">
-            <div class="hover:scale-90 transition-all delay-350 rounded-2xl bg-white min-h-100">
-                <img [src]="activity?.imgUrl" class="h-60 rounded-t-2xl cover-image">
+    <div class="sm:text-xl text-sm text-center text-white">
+        Please pick an activity below to book.
+    </div>
 
-                <div class="-mt-40 text-md sm:text-lg md:text-lg text-headers bg-purple-900 z-60 rounded-md  text-center text-white font-semibold">
+    <div class="mt-5 sm:mt-15 mx-10">
+        <div class="grid grid-cols-2 gap-6 sm:mx-10 md:mx-60">
+
+            <div *ngFor="let activity of activities" class="shadow col-span-2 sm:col-span-1">
+                <div class="hover:scale-90 transition-all delay-350 rounded-2xl bg-white min-h-100">
+
+                    <img [src]="activity.imgUrl" class="h-60 w-full rounded-t-2xl object-cover">
+
+                    <div class="-mt-40 text-lg bg-purple-900 text-center text-white font-semibold rounded-md">
                     <span class="p-2 px-3 bg-dark rounded-full">
-                        {{activity?.title}}
+                        {{activity.title}}
                     </span>
+                    </div>
 
-                </div>
-                <div class="mt-40 grid grid-cols-6 mx-5">
-                    <div *ngFor="let item of activity?.dates" class="group col-span-1">
-                        <span class=" badge bg-dark rounded-full p-1 px-2 text-white w-auto text-sm">
-                           <span > {{item}}</span>
-                           <!-- <span class="hidden group-hover:block text-xs" > 10am - 5pm</span> -->
+                    <div class="mt-40 grid grid-cols-6 mx-5">
+                        <div *ngFor="let item of activity.dates">
+                        <span class="badge bg-dark rounded-full p-1 px-2 text-white text-sm">
+                            {{item}}
                         </span>
+                        </div>
                     </div>
-                </div>
-                <div class="h-15 mt-5 mx-5 text-gray-700">
-                    {{activity?.description}}
-                </div>
-                <div class="mx-5 text-xs text-indigo-900 -mb-2 mt-5">Price does not include transportation.</div>
-                <div class="mx-5  flex flex-inline text-dark">
-                    <div class="font-bold text-xl sm:text-2xl mt-3">
-                        ZAR
+
+                    <div class="mt-4 mx-5 text-gray-700">
+                        {{activity.shortDescription}}
                     </div>
-                    <div class="font-semibold text-5xl sm:text-7xl">
-                        {{activity?.price}}
+
+                    <div class="mx-5 text-xs text-indigo-900 mt-4">
+                        Price does not include transportation.
                     </div>
-                    <div class="font-normal text-md sm:text-lg mt-10">
-                        / person
+
+                    <div class="mx-5 flex text-dark">
+                        <div class="font-bold text-xl mt-3">ZAR</div>
+                        <div class="font-semibold text-5xl ml-1">{{activity.price}}</div>
+                        <div class="font-normal text-md mt-8 ml-2">/ person</div>
                     </div>
-                </div>
-                <div class=" mx-5  mb-10 justify-items-center justify-center items-center">
-                    <div >
-                        <button (click)="openBooking(activity)" class="ml-2 mt-5 mb-5  mat-flat-button bg-purple-900  text-headers text-white rounded-full md:px-10">
+
+                    <div class="mx-5 mb-10 text-center">
+
+                        <button
+                            (click)="viewDetails(activity)"
+                            class="mt-4 bg-indigo-700 text-white rounded-full px-6 py-2 text-sm hover:bg-indigo-800 transition">
+                            View Description
+                        </button>
+
+                        <br>
+
+                        <button
+                            (click)="openBooking(activity)"
+                            class="mt-5 bg-purple-900 text-white rounded-full px-10 py-2">
                             Book this activity
                         </button>
+
+
+                        <button (click)="viewImages(activity)"
+                                class="mt-5 mb-5 mat-flat-button bg-green-600 text-headers text-white rounded-full md:px-10">
+                            View Images
+                        </button>
+
                     </div>
 
                 </div>
-
             </div>
-        </div>
 
+        </div>
     </div>
- </div>
 </div>
