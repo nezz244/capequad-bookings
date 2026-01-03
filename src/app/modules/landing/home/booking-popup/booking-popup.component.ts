@@ -110,57 +110,72 @@ export class BookingPopupComponent implements OnInit {
 
     // Production-ready checkout
     checkout() {
-
+        // 1️⃣ Mark all form fields as touched
         this.bookingForm.markAllAsTouched();
         const phone = this.f.phoneNumber.value;
 
-        // Validate form fields
+        // 2️⃣ Validate the form
         if (!this.bookingForm.valid) {
             this.openSnackBar('Please complete all required fields', 'Close');
             return;
         }
 
-        // Validate phone number object
+        // 3️⃣ Validate phone number object
         if (!phone || !phone.e164Number) {
             this.openSnackBar('Please enter a valid phone number', 'Close');
             return;
         }
 
-        // Passed all validations — proceed
+        // 4️⃣ Show loading
         this.isLoading = true;
         this.cd.detectChanges();
 
+        // 5️⃣ Calculate total cost
         const total = this.getTotalPrice();
 
+        // 6️⃣ Build booking DTO
         const dto = {
             phoneNumber: phone.e164Number,
             email: this.f.email.value,
-            date: this.dateControl.value,
+            date: new Date(this.dateControl.value).toISOString(), // ISO string
             fullName: this.f.fullName.value,
             totalTickets: this.f.numberOfPeople.value,
             totalCost: total,
-            transport: this.f.transportOption.value,
+            transport: this.f.transportOption.value || '', // optional
             service: this.activity.title
         };
 
         console.log('Booking DTO:', dto);
 
-        this.main.triggerCheckout(dto).subscribe(data => {
+        // 7️⃣ Trigger checkout
+        this.main.triggerCheckout(dto).subscribe(
+            (data) => {
+                if (data.data.status === 'created') {
+                    // ✅ Store payment and booking in localStorage
+                    localStorage.setItem('payment', JSON.stringify(data.data));
+                    localStorage.setItem('booking', JSON.stringify(dto));
 
-            if (data.data.status === 'created') {
-                localStorage.setItem('payment', JSON.stringify(data.data));
-                localStorage.setItem('booking', JSON.stringify(dto));
-                this.isLoading = false;
-                this.cd.detectChanges();
-                window.open(data.data.redirectUrl, '_self');
-            } else {
-                this.openSnackBar('Something went wrong, try again later.', 'Close');
+                    this.isLoading = false;
+                    this.cd.detectChanges();
+
+                    // Redirect to payment page
+                    window.open(data.data.redirectUrl, '_self');
+                } else {
+                    this.openSnackBar('Something went wrong, try again later.', 'Close');
+                    this.isLoading = false;
+                    this.cd.detectChanges();
+                }
+            },
+            (err) => {
+                console.error('Checkout error:', err);
+                this.openSnackBar('Payment failed. Try again later.', 'Close');
                 this.isLoading = false;
                 this.cd.detectChanges();
             }
-
-        });
-
+        );
     }
+
+
+
 
 }
