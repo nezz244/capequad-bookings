@@ -1,7 +1,7 @@
 export class AppSettings
 {
 
-  public static API_ENDPOINT = 'http://capequad-backend-production.up.railway.app';
+  public static API_ENDPOINT = 'https://capequad-backend-production.up.railway.app';
   // 'https://cape-quad-new112.wn.r.appspot.com';
 
   public static API_ENDPOINT3 = 'https://api.chatsooner.com/v1';
