@@ -99,11 +99,13 @@ export class BookingPopupComponent implements OnInit {
     // Calculate total cost including transport
     getTotalPrice(): number {
         const base = this.activity.price;
+        console.log("sent price base", base);
         const option = this.f.transportOption.value;
 
         let transportFee = 0;
         if (option === 'class') transportFee = 1000;
         if (option === 'vclass') transportFee = 1750;
+        console.log("sent transportFee", base + transportFee);
 
         return base + transportFee;
     }
