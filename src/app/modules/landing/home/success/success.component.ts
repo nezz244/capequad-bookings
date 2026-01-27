@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from 'app/core/auth/auth.service';
 
+declare var gtag: Function;
+
 @Component({
   selector: 'app-success',
   templateUrl: './success.component.html',
@@ -8,41 +10,46 @@ import { AuthService } from 'app/core/auth/auth.service';
 })
 export class SuccessComponent implements OnInit {
 
-  payment: any ;
-  booking: any ;
+  payment: any;
+  booking: any;
 
-  constructor(private main: AuthService ) {
-
-  }
+  constructor(private main: AuthService) {}
 
   ngOnInit(): void {
 
     this.payment = JSON.parse(localStorage.getItem('payment'));
     this.booking = JSON.parse(localStorage.getItem('booking'));
-    this.booking['paymentRef'] = this.payment.id;
 
-    if(this.payment){
-      this.main.sendEmail(this.booking).subscribe((data) => {
-        console.log(data);
-        //remove the payment
-        this.saveBooking(this.booking);
+    if (this.payment && this.booking) {
+
+      this.booking['paymentRef'] = this.payment.id;
+
+      // ✅ FIRE GOOGLE CONVERSION HERE
+      gtag('event', 'purchase', {
+        transaction_id: this.payment.id,
+        value: this.payment.amount || this.booking.totalAmount,
+        currency: 'ZAR',
+        items: [
+          {
+            item_name: this.booking.title,
+            quantity: this.booking.totalTickets
+          }
+        ]
       });
 
+      // ✅ email
+      this.main.sendEmail(this.booking).subscribe(() => {
+        this.saveBooking(this.booking);
+      });
     }
-
   }
 
+  saveBooking(booking: { [x: string]: Date }) {
 
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  saveBooking(booking: { [x: string]: Date }){
+    booking['created'] = new Date();
 
-    booking['created'] = new Date() ;
-
-    this.main.saveBooking(this.booking).subscribe((data) => {
-      console.log(data);
+    this.main.saveBooking(this.booking).subscribe(() => {
       localStorage.removeItem('payment');
     });
-
   }
-
 }
