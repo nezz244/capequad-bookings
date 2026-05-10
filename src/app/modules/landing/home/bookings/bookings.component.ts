@@ -14,42 +14,35 @@ export class BookingsComponent {
 
     activities = [
         {
-            title: 'Quad Biking',
-            shortDescription: 'Adrenaline-packed quad biking adventure.',
+            title: 'Quadbiking 1hr',
+            shortDescription:
+                'Experience the thrill of adventure in the Grabouw mountains on a guided quad biking tour. Ride along scenic trails and enjoy panoramic views of the surrounding landscapes.',
             fullDescription: `
-<div class="space-y-4 text-gray-700 leading-relaxed">
-  <h4 class="font-bold">Full Description</h4>
+<div class="space-y-3 text-sm text-gray-700 leading-snug">
   <p>
-   This action-packed activity offers a unique opportunity to explore the
-    stunning natural landscapes of the dunes while enjoying the exhilaration of off-road quadbiking.
+    Guided <strong>quad biking</strong> from <strong>Trails End Hotel</strong> in the Grabouw mountains — winding trails, rugged terrain, and wide-open views with an experienced guide. Great for thrill-seekers and sightseers alike. Add lunch &amp; transport when you book (per person).
   </p>
 
-  <p>
-    Throughout the tour, our knowledgeable guides will provide interesting insights into the unique flora
-    and fauna of the dunes, as well as the history and geology of the area. You'll have plenty of opportunities
-    to stop, take photos, and soak in the breathtaking views of the surrounding landscapes.
-  </p>
+  <div>
+    <h4 class="font-bold text-base mb-1">Highlights</h4>
+    <ul class="list-disc ml-5 space-y-0.5">
+      <li>Scenic mountain trails &amp; viewpoints</li>
+      <li>Quad bike on rugged paths</li>
+      <li>Panoramic valley &amp; mountain views</li>
+    </ul>
+  </div>
 
-  <h4 class="font-bold mt-4">Highlights</h4>
-  <ul class="list-disc ml-6 space-y-1">
-    <li>Conquer the thrilling dunes: Navigate through sandy terrains</li>
-    <li>Unforgettable adventure for all levels</li>
-    <li>Flexible options for convenience</li>
-  </ul>
-
-   <h4 class="font-bold mt-4">Inclusions</h4>
-    <li>Quadbike, Helmet, Hair Net</li>
-    <li>Tour Guides will take pictures</li>
-
-  <h4 class="font-bold mt-4">Exclusions</h4>
-  <li>R250 NATURE DAY entry permit</li>
-
+  <div>
+    <h4 class="font-bold text-base mb-1">Inclusions &amp; exclusions</h4>
+    <p class="mb-0.5"><span class="font-semibold">Includes:</span> guided quad tour, safety equipment, guide.</p>
+    <p class="mb-0"><span class="font-semibold">Not included:</span> R100 nature reserve entrance permit.</p>
+  </div>
 </div>
 `,
-            price: 799,
+            price: 500,
             timeStart: '10:00 AM',
             timeEnd: '17:00 PM',
-            dates: ['Mon','Tue','Wed','Thur','Fri','Sat'],
+            dates: ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
             imgUrl: 'assets/images/activities/12.jpeg',
             gallery: [
                 'assets/images/activities/quad1.avif',
@@ -57,51 +50,42 @@ export class BookingsComponent {
                 'assets/images/activities/quad4.avif',
                 'assets/images/activities/quad5.avif',
                 'assets/images/activities/quad6.avif'
+            ],
+            addons: [
+                { id: 'lunch', label: 'Burger and chips lunch', pricePerPerson: 200 },
+                { id: 'transport', label: 'Transport', pricePerPerson: 300 }
             ]
         },
         {
-            title: 'Cape Town Dessert Thrill: Jeep Dune Venture',
-            shortDescription: 'Jeep tour + sandboarding experience.',
+            title: 'Dune buggy experience',
+            shortDescription:
+                'Experience the thrill of adventure in the Grabouw mountains on a guided dune buggy tour. Ride along scenic trails and enjoy panoramic views of the surrounding landscapes.',
             fullDescription: `
-<div class="space-y-4 text-gray-700 leading-relaxed">
-
-  <h4 class="font-bold">Full Description</h4>
+<div class="space-y-3 text-sm text-gray-700 leading-snug">
   <p>
-    The <strong>Desert Thrill Dune Jeep Venture</strong> at Atlantis Dunes is an unforgettable adventure
-    for thrill-seekers and nature enthusiasts alike.</p>
-
-  <p>
-    The adventure is led by experienced professional guides who ensure your safety while
-    showing you the very best of the desert’s unique landscape. Complimentary water is provided
-    to keep you energized throughout the tour.
+    Guided <strong>dune buggy</strong> (side-by-side) tour from <strong>Trails End Hotel</strong> in the Grabouw mountains — trails, rugged terrain, and wide-open views with an experienced guide. Add lunch &amp; transport when you book (per person).
   </p>
 
-  <h4 class="font-bold mt-4">Highlights</h4>
-  <ul class="list-disc ml-6 space-y-1">
-    <li>Thrilling dune bashing and sandboarding experience</li>
-    <li>Explore South Africa's iconic Atlantis Desert</li>
-    <li>Epic jeep adventure across towering dunes</li>
-    <li>Perfect for adrenaline seekers and outdoor lovers</li>
-    <li>Professionally guided and safety-focused tour</li>
-  </ul>
+  <div>
+    <h4 class="font-bold text-base mb-1">Highlights</h4>
+    <ul class="list-disc ml-5 space-y-0.5">
+      <li>Scenic mountain trails &amp; viewpoints</li>
+      <li>Side-by-side buggy on rugged paths</li>
+      <li>Panoramic valley &amp; mountain views</li>
+    </ul>
+  </div>
 
-  <h4 class="font-bold mt-4">Inclusions</h4>
-    <li>Our 4x4 jeep, water and sandboards</li>
-
-
-  <h4 class="font-bold mt-4">Exclusions</h4>
-  <li>R250 NATURE DAY entry permit</li>
-
-
-Inclusions
-
-Exclusions
-nature reserve entry permit of R250
+  <div>
+    <h4 class="font-bold text-base mb-1">Inclusions &amp; exclusions</h4>
+    <p class="mb-0.5"><span class="font-semibold">Includes:</span> guided dune buggy tour, safety equipment, guide.</p>
+    <p class="mb-0"><span class="font-semibold">Not included:</span> R100 nature reserve entrance permit.</p>
+  </div>
 </div>
-`,      price: 960,
+`,
+            price: 1000,
             timeStart: '10:00 AM',
             timeEnd: '17:00 PM',
-            dates: ['Mon','Tue','Wed','Thur','Fri','Sat'],
+            dates: ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
             imgUrl: 'assets/images/activities/15.jpeg',
             gallery: [
                 'assets/images/activities/jeep1.jpeg',
@@ -113,49 +97,10 @@ nature reserve entry permit of R250
                 'assets/images/activities/jeep7.jpeg',
                 'assets/images/activities/jeep8.jpeg',
                 'assets/images/activities/jeep9.jpeg'
-            ]
-        },
-        {
-            title: 'SandBoarding',
-            shortDescription: 'Pure sandboarding excitement.',
-            fullDescription: `
-<div class="space-y-4 text-gray-700 leading-relaxed">
-
-  <h4 class="font-bold">Full Description</h4>
-  <p>
-    Embark on an exhilarating sandboarding adventure at Atlantis Dunes, a breathtaking destination where golden sands stretch
-    as far as the eye can see.
-  </p>
-
-  <p>
-    No matter your skill level, sandboarding at Atlantis Dunes is an adventure that combines excitement, nature, and the joy of mastering a new challenge.
-    Get ready to conquer the dunes, embrace the speed, and make unforgettable memories in one of South Africa’s most spectacular outdoor playgrounds!
-  </p>
-
-  <h4 class="font-bold mt-4">Highlights</h4>
-  <ul class="list-disc ml-6 space-y-1">
-    <li>Experience the rush of sandboarding down colossal dunes</li>
-    <li>Learn from seasoned instructors who ensure a safe and enjoyable ride</li>
-    <li>Inclusive Gear: All the equipment you need, from boards to safety gear, is provided</li>
-  </ul>
-
-    <h4 class="font-bold mt-4">Inclusions</h4>
-    <li>Sandboarding equipment (board, bindings, and safety gear)</li>
-
-  <h4 class="font-bold mt-4">Exclusions</h4>
-  <li>R80 NATURE DAY entry permit</li>
-
-</div>
-`
-,            price: 350,
-            timeStart: '10:00 AM',
-            timeEnd: '17:00 PM',
-            dates: ['Mon','Tue','Wed','Thur','Fri','Sat'],
-            imgUrl: 'assets/images/activities/7.jpeg',
-            gallery: [
-                'assets/images/activities/sand1.avif',
-                'assets/images/activities/sand2.avif',
-                'assets/images/activities/sand3.avif'
+            ],
+            addons: [
+                { id: 'lunch', label: 'Burger and chips lunch', pricePerPerson: 200 },
+                { id: 'transport', label: 'Transport', pricePerPerson: 300 }
             ]
         }
     ];

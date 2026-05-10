@@ -3,6 +3,20 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
+    /** Public contact blocks for the landing header/footer — update whatsapp URL with your real number. */
+    contact: {
+        brandName: 'CapeAdrenaline',
+        email: 'info@capeadrenaline.com',
+        whatsappUrl: 'https://wa.me/27710000000',
+        whatsappLabel: '+27 71 000 0000',
+        location: 'Trails End Hotel, Grabouw',
+        mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Trails+End+Hotel+Grabouw',
+        social: {
+            facebook: '',
+            instagram: '',
+            tiktok: ''
+        }
+    },
     firebase: {
       apiKey: "AIzaSyAr-UCofUlWYtwSDKVY8xtEs_HpJonNkyg",
       authDomain: "cape-quad-new112.firebaseapp.com",

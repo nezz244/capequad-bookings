@@ -7,6 +7,7 @@ import { LandingHomeComponent } from 'app/modules/landing/home/home.component';
 import { landingHomeRoutes } from 'app/modules/landing/home/home.routing';
 import { MatProgressSpinner, MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BookingsComponent } from './bookings/bookings.component';
+import { GroupActivitiesComponent } from './group-activities/group-activities.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,6 +29,8 @@ import { NgxIntlTelInputModule } from 'ngx-intl-tel-input';
 import { SuccessComponent } from './success/success.component';
 import { FailureComponent } from './failure/failure.component';
 
+import { MatRadioModule } from '@angular/material/radio';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { PerfectScrollbarModule } from 'ngx-perfect-scrollbar';
 import { PERFECT_SCROLLBAR_CONFIG } from 'ngx-perfect-scrollbar';
 import { PerfectScrollbarConfigInterface } from 'ngx-perfect-scrollbar';
@@ -51,10 +54,11 @@ const DEFAULT_PERFECT_SCROLLBAR_CONFIG: PerfectScrollbarConfigInterface = {
     declarations: [
         LandingHomeComponent,
         BookingsComponent,
+        GroupActivitiesComponent,
         BookingPopupComponent,
         SuccessComponent,
         FailureComponent
-        
+
     ],
     imports     : [
         RouterModule.forChild(landingHomeRoutes),
@@ -76,6 +80,8 @@ const DEFAULT_PERFECT_SCROLLBAR_CONFIG: PerfectScrollbarConfigInterface = {
         MatDatepickerModule,
       
         NgxIntlTelInputModule,
+        MatRadioModule,
+        MatSnackBarModule,
         PerfectScrollbarModule,
         
         GoogleApiModule.forRoot({

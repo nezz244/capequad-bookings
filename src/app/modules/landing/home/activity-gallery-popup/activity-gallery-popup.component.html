@@ -1,27 +1,100 @@
-<div class="p-4 bg-white rounded-lg relative w-full">
+<div class="gallery-dialog position-relative rounded-lg bg-white p-3 pb-4">
 
-    <!-- Close Button -->
-    <button (click)="close()"
-            class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 font-bold text-2xl">
+    <button
+        type="button"
+        class="btn-close-gallery position-absolute top-2 end-2 z-2 border-0 bg-transparent fs-4 lh-1 text-secondary"
+        (click)="close()"
+        aria-label="Close gallery">
         &times;
     </button>
 
-    <h3 class="font-bold text-xl text-center mb-4">{{ data.title }}</h3>
+    <h3 class="mb-3 pe-10 text-center fs-5 fw-bold">{{ data.title }}</h3>
 
-    <!-- Scroll Buttons for Desktop -->
-    <div class="hidden sm:flex justify-between mb-2">
-        <button (click)="scrollGallery('left')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">&lt;</button>
-        <button (click)="scrollGallery('right')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">&gt;</button>
-    </div>
+    <div class="lightbox">
+        <div class="multi-carousel carousel slide position-relative" *ngIf="slideCount">
+            <div class="multi-carousel-inner overflow-hidden rounded">
+                <div
+                    *ngFor="let img of slides; let i = index"
+                    class="multi-carousel-item"
+                    [class.multi-carousel-item--active]="i === activeIndex"
+                    role="tabpanel">
+                    <img
+                        [src]="img"
+                        [attr.data-mdb-img]="img"
+                        [alt]="ariaLabelAlt(i)"
+                        class="w-100 gallery-main-img rounded"
+                        tabindex="0"
+                        role="button"
+                        (click)="openLightbox()"
+                        (keyup.enter)="openLightbox()"
+                        [attr.title]="'View full size — ' + ariaLabelAlt(i)" />
+                </div>
+            </div>
 
-    <!-- Horizontal scroll gallery -->
-    <div class="flex overflow-x-auto space-x-4 gallery-scroll scrollbar-hide pb-4">
-        <div *ngFor="let img of data.gallery" class="flex-shrink-0 h-60 sm:h-72 w-80 sm:w-96 relative rounded-lg overflow-hidden">
-            <img [src]="img"
-                 alt="activity image"
-                 loading="lazy"
-                 class="w-full h-full object-cover transition-transform duration-300 hover:scale-105">
+            <button
+                *ngIf="slideCount > 1"
+                type="button"
+                class="carousel-control-prev"
+                tabindex="0"
+                (click)="prev()"
+                aria-label="Previous slide">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button
+                *ngIf="slideCount > 1"
+                type="button"
+                class="carousel-control-next"
+                tabindex="0"
+                (click)="next()"
+                aria-label="Next slide">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+
+            <p *ngIf="slideCount > 1" class="text-muted text-center small mt-2 mb-0">
+                {{ activeIndex + 1 }} / {{ slideCount }} — tap image for full screen
+            </p>
+            <p *ngIf="slideCount === 1" class="text-muted text-center small mt-2 mb-0">
+                Tap image for full screen
+            </p>
+        </div>
+
+        <div *ngIf="!slideCount" class="text-center text-muted py-5">
+            No images for this activity.
         </div>
     </div>
+</div>
 
+<!-- Full-screen lightbox (uses same URL as data-mdb-img) -->
+<div
+    *ngIf="lightboxOpen && currentSrc"
+    class="gallery-fullscreen"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    (click)="closeLightbox()">
+    <button type="button" class="gallery-fullscreen-close btn btn-dark btn-sm rounded-pill" (click)="closeLightbox(); $event.stopPropagation()">
+        Close
+    </button>
+    <button
+        *ngIf="slideCount > 1"
+        type="button"
+        class="gallery-fullscreen-prev carousel-control-prev"
+        (click)="prev(); $event.stopPropagation()"
+        aria-label="Previous">
+        <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
+    </button>
+    <button
+        *ngIf="slideCount > 1"
+        type="button"
+        class="gallery-fullscreen-next carousel-control-next"
+        (click)="next(); $event.stopPropagation()"
+        aria-label="Next">
+        <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
+    </button>
+    <img
+        class="gallery-fullscreen-img"
+        [src]="currentSrc"
+        [attr.data-mdb-img]="currentSrc"
+        [alt]="ariaLabelAlt(activeIndex)"
+        (click)="$event.stopPropagation()" />
 </div>

@@ -1,0 +1,141 @@
+<div class="flex min-h-screen w-full flex-col bg-dark text-white">
+    <header
+        class="flex flex-none flex-wrap items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6 md:px-8">
+        <a
+            routerLink="bookings"
+            class="text-lg font-bold tracking-tight hover:opacity-90 sm:text-xl">
+            {{ contact.brandName }}
+        </a>
+        <nav
+            class="flex w-full gap-2 sm:w-auto sm:justify-end sm:gap-3"
+            aria-label="Main">
+            <a
+                routerLink="bookings"
+                routerLinkActive="bg-purple-900 shadow-sm"
+                [routerLinkActiveOptions]="{ exact: false }"
+                class="rounded-full px-4 py-2 text-center text-sm font-semibold text-white ring-1 ring-white/10 transition-colors hover:bg-white/10">
+                Bookings
+            </a>
+            <a
+                routerLink="group-activities"
+                routerLinkActive="bg-purple-900 shadow-sm"
+                class="rounded-full px-4 py-2 text-center text-sm font-semibold text-white ring-1 ring-white/10 transition-colors hover:bg-white/10">
+                Group activities
+            </a>
+        </nav>
+    </header>
+
+    <main class="flex min-h-0 flex-1 flex-col">
+        <router-outlet></router-outlet>
+    </main>
+
+    <footer class="mt-auto flex-none w-full text-center text-lg-start text-white bg-dark">
+        <div class="container p-4">
+            <div class="row mt-4">
+                <div class="col-lg-4 col-md-12 mb-4 mb-md-0">
+                    <h5 class="mb-4 text-uppercase">About company</h5>
+
+                    <p>
+                        At {{ contact.brandName }}, we combine adrenaline, nature, and unforgettable experiences to showcase the wild beauty and adventurous spirit of Cape Town.
+                    </p>
+
+                    <p>
+                        Built for thrill-seekers. Powered by adventure. Inspired by Cape Town.
+                    </p>
+
+                    <div *ngIf="hasSocialLinks" class="mt-4">
+                        <a
+                            *ngIf="contact.social?.facebook"
+                            [href]="contact.social.facebook"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-light btn-lg d-inline-flex align-items-center justify-content-center rounded-circle me-2"
+                            style="width: 3rem; height: 3rem"
+                            aria-label="Facebook">
+                            <i class="fab fa-facebook-f" aria-hidden="true"></i>
+                        </a>
+                        <a
+                            *ngIf="contact.social?.instagram"
+                            [href]="contact.social.instagram"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-light btn-lg d-inline-flex align-items-center justify-content-center rounded-circle me-2"
+                            style="width: 3rem; height: 3rem"
+                            aria-label="Instagram">
+                            <i class="fab fa-instagram" aria-hidden="true"></i>
+                        </a>
+                        <a
+                            *ngIf="contact.social?.tiktok"
+                            [href]="contact.social.tiktok"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-light btn-lg d-inline-flex align-items-center justify-content-center rounded-circle me-2"
+                            style="width: 3rem; height: 3rem"
+                            aria-label="TikTok">
+                            <i class="fab fa-tiktok" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
+                    <h5 class="mb-4 pb-1 text-uppercase">Contact</h5>
+
+                    <ul class="fa-ul text-start ms-0" style="margin-left: 1.65em">
+                        <li class="mb-3">
+                            <span class="fa-li"><i class="fas fa-home" aria-hidden="true"></i></span>
+                            <a
+                                class="ms-2 text-white text-decoration-underline"
+                                [href]="contact.mapsUrl"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {{ contact.location }}
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <span class="fa-li"><i class="fas fa-envelope" aria-hidden="true"></i></span>
+                            <a class="ms-2 text-white text-decoration-underline" [href]="'mailto:' + contact.email">
+                                {{ contact.email }}
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <span class="fa-li"><i class="fab fa-whatsapp" aria-hidden="true"></i></span>
+                            <a
+                                class="ms-2 text-white text-decoration-underline"
+                                [href]="contact.whatsappUrl"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {{ contact.whatsappLabel }}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
+                    <h5 class="mb-4 text-uppercase">Opening hours</h5>
+
+                    <table class="table table-dark table-borderless caption-top mb-0 text-center text-white">
+                        <caption class="visually-hidden">Opening hours</caption>
+                        <tbody class="fw-normal">
+                            <tr>
+                                <td>Mon - Thu:</td>
+                                <td>10am - 5pm</td>
+                            </tr>
+                            <tr>
+                                <td>Fri - Sat:</td>
+                                <td>10am - 5pm</td>
+                            </tr>
+                            <tr>
+                                <td>Sunday:</td>
+                                <td>10am - 5pm</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center bg-black bg-opacity-25 p-3">
+            © {{ currentYear }} {{ contact.brandName }}
+        </div>
+    </footer>
+</div>

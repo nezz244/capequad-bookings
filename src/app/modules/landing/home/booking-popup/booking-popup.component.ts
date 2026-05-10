@@ -1,10 +1,8 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild, Inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ThemePalette } from '@angular/material/core';
-import { GoogleApiService } from 'ng-gapi';
-import { SearchCountryField, CountryISO, PhoneNumberFormat } from 'ngx-intl-tel-input';
+import { CountryISO, PhoneNumberFormat, SearchCountryField } from 'ngx-intl-tel-input';
 import { AuthService } from 'app/core/auth/auth.service';
 
 @Component({
@@ -14,120 +12,95 @@ import { AuthService } from 'app/core/auth/auth.service';
 })
 export class BookingPopupComponent implements OnInit {
 
-    isLoading: boolean = false;
+    isLoading = false;
 
     config = { useBothWheelAxes: false, suppressScrollX: true, suppressScrollY: false };
-
-    @ViewChild('picker') picker: any;
 
     public dateControl = new FormControl(new Date());
 
     bookingForm: FormGroup;
     activity: any;
 
-    // Phone settings
     separateDialCode = false;
     SearchCountryField = SearchCountryField;
     CountryISO = CountryISO;
     PhoneNumberFormat = PhoneNumberFormat;
-    preferredCountries: CountryISO[] = [CountryISO.UnitedStates, CountryISO.UnitedKingdom];
 
     constructor(
         private fb: FormBuilder,
         private _snackBar: MatSnackBar,
-        private gapiService: GoogleApiService,
         private cd: ChangeDetectorRef,
         private main: AuthService,
         public matDialogRef: MatDialogRef<BookingPopupComponent>,
         @Inject(MAT_DIALOG_DATA) public data: any
     ) {
-
-        // Form initialization
         this.bookingForm = this.fb.group({
             email: ['', [Validators.required, Validators.email]],
             fullName: ['', [Validators.required]],
             numberOfPeople: [1, [Validators.required, Validators.min(1)]],
-            phoneNumber: [''],           // No Angular required validator for ngx-intl-tel-input
-            transportOption: ['']        // '', 'class', 'vclass'
+            phoneNumber: [''],
+            addonLunch: [false],
+            addonTransport: [false]
         });
-
     }
 
     ngOnInit(): void {
         this.activity = this.data;
-
-        // Enforce capacity rules when transport option changes
-        this.f.transportOption.valueChanges.subscribe(() => {
-            this.checkNumber();
-        });
     }
 
-    // Shortcut to form controls
     get f() {
         return this.bookingForm.controls;
     }
 
-    saveAndClose() {
+    addonPricePerPerson(addonId: string): number {
+        const row = this.activity?.addons?.find((a: { id: string }) => a.id === addonId);
+        return row?.pricePerPerson ?? 0;
+    }
+
+    saveAndClose(): void {
         this.matDialogRef.close();
     }
 
-    openSnackBar(message: string, action: string) {
+    openSnackBar(message: string, action: string): void {
         this._snackBar.open(message, action, { duration: 3000 });
     }
 
-    // Enforce passenger limits
-    checkNumber() {
-        const people = this.f.numberOfPeople.value;
-        const option = this.f.transportOption.value;
-
+    checkNumber(): void {
+        const people = Number(this.f.numberOfPeople.value);
         if (people < 1) {
             this.f.numberOfPeople.setValue(1);
             this.openSnackBar('Minimum number of people is 1', 'Close');
         }
-
-        if (option === 'class' && people > 3) {
-            this.f.numberOfPeople.setValue(3);
-            this.openSnackBar('Mercedes Benz Class allows only 3 passengers', 'Close');
-        }
-
-        if (option === 'vclass' && people > 8) {
-            this.f.numberOfPeople.setValue(8);
-            this.openSnackBar('Mercedes Benz V-Class allows only 8 passengers', 'Close');
-        }
     }
 
-    // Calculate total cost including transport
     getTotalPrice(): number {
         const peopleCount = Number(this.f.numberOfPeople.value) || 1;
-        const base = this.activity.price * peopleCount;
-        const option = this.f.transportOption.value;
+        let total = this.activity.price * peopleCount;
 
-        let transportFee = 0;
-        if (option === 'class') transportFee = 1000;
-        if (option === 'vclass') transportFee = 1750;
+        if (this.f.addonLunch.value) {
+            total += this.addonPricePerPerson('lunch') * peopleCount;
+        }
+        if (this.f.addonTransport.value) {
+            total += this.addonPricePerPerson('transport') * peopleCount;
+        }
 
-        return base + transportFee;
+        return total;
     }
 
-    // Production-ready checkout
-    checkout() {
-
+    checkout(): void {
         this.bookingForm.markAllAsTouched();
         const phone = this.f.phoneNumber.value;
 
-        // Validate form fields
         if (!this.bookingForm.valid) {
             this.openSnackBar('Please complete all required fields', 'Close');
             return;
         }
 
-        // Validate phone number object
         if (!phone || !phone.e164Number) {
             this.openSnackBar('Please enter a valid phone number', 'Close');
             return;
         }
 
-        // Passed all validations — proceed
         this.isLoading = true;
         this.cd.detectChanges();
 
@@ -140,28 +113,33 @@ export class BookingPopupComponent implements OnInit {
             fullName: this.f.fullName.value,
             totalTickets: this.f.numberOfPeople.value,
             totalCost: total,
-            transport: this.f.transportOption.value,
-            service: this.activity.title
+            transport: '',
+            service: this.activity.title,
+            extras: {
+                burgerLunchPerPerson: this.f.addonLunch.value,
+                lunchPerPersonAmount: this.f.addonLunch.value ? this.addonPricePerPerson('lunch') : 0,
+                transportPerPerson: this.f.addonTransport.value,
+                transportPerPersonAmount: this.f.addonTransport.value ? this.addonPricePerPerson('transport') : 0
+            }
         };
 
-        console.log('Booking DTO:', dto);
-
-        this.main.triggerCheckout(dto).subscribe(data => {
-
-            if (data.data.status === 'created') {
-                localStorage.setItem('payment', JSON.stringify(data.data));
-                localStorage.setItem('booking', JSON.stringify(dto));
+        this.main.triggerCheckout(dto).subscribe({
+            next: (data) => {
+                if (data.data.status === 'created') {
+                    localStorage.setItem('payment', JSON.stringify(data.data));
+                    localStorage.setItem('booking', JSON.stringify(dto));
+                    window.open(data.data.redirectUrl, '_self');
+                } else {
+                    this.openSnackBar('Something went wrong, try again later.', 'Close');
+                }
                 this.isLoading = false;
                 this.cd.detectChanges();
-                window.open(data.data.redirectUrl, '_self');
-            } else {
+            },
+            error: () => {
                 this.openSnackBar('Something went wrong, try again later.', 'Close');
                 this.isLoading = false;
                 this.cd.detectChanges();
             }
-
         });
-
     }
-
 }

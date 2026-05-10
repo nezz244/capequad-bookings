@@ -1312,7 +1312,7 @@ export class AuthService
 
 
 
-  // capequad backend new 
+  // CapeAdrenaline backend (payments / email API)
 
 
   

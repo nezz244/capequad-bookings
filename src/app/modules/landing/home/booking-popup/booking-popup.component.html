@@ -55,19 +55,17 @@
                    formControlName="numberOfPeople">
         </div>
 
-        <!--
-       Transport
-       <div class="col-span-6 md:col-span-3">
-           <label>Transport option</label>
-           <select class="mt-2 w-full h-12 border border-accent-900 rounded-md pl-3"
-                   formControlName="transportOption">
-               <option value="">No Transport</option>
-               <option value="class">Mercedes Benz C-Class (3 pax) — R1000 Return</option>
-               <option value="vclass">Mercedes Benz V-Class (8 pax) — R1750 Return</option>
-           </select>
-       </div>
-   -->
-
+        <div class="col-span-6">
+            <label class="mb-2 block">Optional add-ons <span class="text-gray-500 font-normal">(per person)</span></label>
+            <div class="flex flex-col gap-2 rounded-md border border-accent-900 p-3">
+                <mat-checkbox color="primary" formControlName="addonLunch">
+                    Burger and chips lunch — ZAR {{ addonPricePerPerson('lunch') }} per person
+                </mat-checkbox>
+                <mat-checkbox color="primary" formControlName="addonTransport">
+                    Transport — ZAR {{ addonPricePerPerson('transport') }} per person
+                </mat-checkbox>
+            </div>
+        </div>
 
         <!-- Total -->
         <div class="col-span-6 flex justify-end border border-accent-900 rounded-md p-4">
