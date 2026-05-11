@@ -3,8 +3,8 @@ export const environment = {
     contact: {
         brandName: 'CapeAdrenaline',
         email: 'info@capeadrenaline.com',
-        whatsappUrl: 'https://wa.me/27710000000',
-        whatsappLabel: '+27 71 000 0000',
+        whatsappUrl: 'https://wa.me/27605954968',
+        whatsappLabel: '+27 605 954 968',
         location: 'Trails End Hotel, Grabouw',
         mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Trails+End+Hotel+Grabouw',
         social: {
