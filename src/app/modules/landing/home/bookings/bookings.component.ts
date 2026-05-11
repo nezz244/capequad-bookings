@@ -43,13 +43,10 @@ export class BookingsComponent {
             timeStart: '10:00 AM',
             timeEnd: '17:00 PM',
             dates: ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
-            imgUrl: 'assets/images/activities/12.jpeg',
+            imgUrl: 'assets/images/activities/quads1.jpeg',
             gallery: [
-                'assets/images/activities/quad1.avif',
-                'assets/images/activities/quad2.avif',
-                'assets/images/activities/quad4.avif',
-                'assets/images/activities/quad5.avif',
-                'assets/images/activities/quad6.avif'
+                'assets/images/activities/quads1.jpeg',
+                'assets/images/activities/quads3.jpeg'
             ],
             addons: [
                 { id: 'lunch', label: 'Burger and chips lunch', pricePerPerson: 200 },
@@ -86,17 +83,12 @@ export class BookingsComponent {
             timeStart: '10:00 AM',
             timeEnd: '17:00 PM',
             dates: ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
-            imgUrl: 'assets/images/activities/15.jpeg',
+            imgUrl: 'assets/images/activities/buggy1.jpeg',
             gallery: [
-                'assets/images/activities/jeep1.jpeg',
-                'assets/images/activities/jeep2.jpeg',
-                'assets/images/activities/jeep3.jpeg',
-                'assets/images/activities/jeep4.jpeg',
-                'assets/images/activities/jeep5.jpeg',
-                'assets/images/activities/jeep6.jpeg',
-                'assets/images/activities/jeep7.jpeg',
-                'assets/images/activities/jeep8.jpeg',
-                'assets/images/activities/jeep9.jpeg'
+                'assets/images/activities/buggy1.jpeg',
+                'assets/images/activities/buggy2.jpeg',
+                'assets/images/activities/buggy3.jpeg',
+                'assets/images/activities/buggy4.jpeg'
             ],
             addons: [
                 { id: 'lunch', label: 'Burger and chips lunch', pricePerPerson: 200 },
