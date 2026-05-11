@@ -45,6 +45,7 @@ export class BookingsComponent {
             dates: ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
             imgUrl: 'assets/images/activities/quads1.jpeg',
             gallery: [
+                'assets/images/activities/quad2.png',
                 'assets/images/activities/quads1.jpeg',
                 'assets/images/activities/quads3.jpeg'
             ],
@@ -88,7 +89,9 @@ export class BookingsComponent {
                 'assets/images/activities/buggy1.jpeg',
                 'assets/images/activities/buggy2.jpeg',
                 'assets/images/activities/buggy3.jpeg',
-                'assets/images/activities/buggy4.jpeg'
+                'assets/images/activities/buggy4.jpeg',
+                'assets/images/activities/buggy5.png',
+                'assets/images/activities/buggy7.png'
             ],
             addons: [
                 { id: 'lunch', label: 'Burger and chips lunch', pricePerPerson: 200 },
