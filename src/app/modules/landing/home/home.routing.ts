@@ -15,11 +15,33 @@ export const landingHomeRoutes: Route[] = [
             },
             {
                 path: 'bookings',
-                component: BookingsComponent
+                component: BookingsComponent,
+                data: {
+                    seo: {
+                        title: 'Book Quad Biking & Dune Buggy | CapeAdrenaline Cape Town',
+                        description:
+                            'Book Cape Town quad biking (from R1000) and dune buggy tours (from R1500) with a scenic waterfall stop. Guided adventures at Trails End Hotel, Grabouw.',
+                        keywords:
+                            'book quad biking Cape Town, book dune buggy, waterfall adventure tour, Grabouw booking, CapeAdrenaline',
+                        path: '/home/bookings',
+                        image: 'assets/images/activities/buggy7.png'
+                    }
+                }
             },
             {
                 path: 'group-activities',
-                component: GroupActivitiesComponent
+                component: GroupActivitiesComponent,
+                data: {
+                    seo: {
+                        title: 'Group Activities & Corporate Tours | CapeAdrenaline',
+                        description:
+                            'Plan group quad biking and dune buggy adventures in Cape Town. Contact CapeAdrenaline for team outings, events, and custom group packages.',
+                        keywords:
+                            'group quad biking Cape Town, corporate adventure tour, team building Grabouw, group dune buggy',
+                        path: '/home/group-activities',
+                        image: 'assets/images/activities/quads1.jpeg'
+                    }
+                }
             }
         ]
     }

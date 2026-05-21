@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block payment result pages from indexing
+Disallow: /success
+Disallow: /failure
+
+Sitemap: https://app-capequad-bookings.web.app/sitemap.xml

@@ -3,6 +3,19 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
+    /** SEO — set siteUrl to your live domain (e.g. custom domain on Firebase Hosting). */
+    seo: {
+        siteUrl: 'http://localhost:4200',
+        siteName: 'CapeAdrenaline',
+        defaultTitle: 'CapeAdrenaline | Cape Town Quad Biking & Dune Buggy Tours',
+        defaultDescription:
+            'Book Cape Town quad biking and dune buggy adventures with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw — CapeAdrenaline.',
+        defaultKeywords:
+            'Cape Town quad biking, dune buggy Cape Town, Grabouw adventure, waterfall tour, Trails End Hotel, CapeAdrenaline, Western Cape tours',
+        defaultImage: 'assets/images/activities/buggy7.png',
+        locale: 'en_ZA',
+        googleSiteVerification: ''
+    },
     /** Public contact blocks for the landing header/footer — update whatsapp URL with your real number. */
     contact: {
         brandName: 'CapeAdrenaline',
