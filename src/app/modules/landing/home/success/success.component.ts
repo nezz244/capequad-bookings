@@ -27,11 +27,11 @@ export class SuccessComponent implements OnInit {
       // ✅ FIRE GOOGLE CONVERSION HERE
       gtag('event', 'purchase', {
         transaction_id: this.payment.id,
-        value: this.payment.amount || this.booking.totalAmount,
+        value: this.payment.amount || this.booking.totalCost,
         currency: 'ZAR',
         items: [
           {
-            item_name: this.booking.title,
+            item_name: this.booking.service,
             quantity: this.booking.totalTickets
           }
         ]
@@ -51,5 +51,9 @@ export class SuccessComponent implements OnInit {
     this.main.saveBooking(this.booking).subscribe(() => {
       localStorage.removeItem('payment');
     });
+  }
+
+  bookingUnitLabel(): string {
+    return this.booking?.priceUnit === 'couple' ? 'couple(s)' : 'person(s)';
   }
 }

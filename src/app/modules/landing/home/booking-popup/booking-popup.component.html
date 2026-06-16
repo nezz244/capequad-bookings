@@ -48,14 +48,19 @@
 
         <!-- Tickets -->
         <div class="col-span-6 md:col-span-3">
-            <label>Number of tickets</label>
+            <label>{{ isCoupleBooking() ? 'Number of couples' : 'Number of people' }}</label>
             <input type="number"
                    (change)="checkNumber()"
+                   [readonly]="isCoupleBooking()"
+                   [max]="maxPeoplePerSlot()"
                    class="mt-2 pl-2 text-lg w-full h-12 border border-accent-900"
                    formControlName="numberOfPeople">
+            <div class="mt-1 text-xs text-gray-500">
+                Max {{ maxPeoplePerSlotLabel() }} per time slot.
+            </div>
         </div>
 
-        <div class="col-span-6">
+        <div *ngIf="hasAddons()" class="col-span-6">
             <label class="mb-2 block">Optional add-ons <span class="text-gray-500 font-normal">(per person)</span></label>
             <div class="flex flex-col gap-2 rounded-md border border-accent-900 p-3">
                 <mat-checkbox color="primary" formControlName="addonLunch">
@@ -67,28 +72,41 @@
             </div>
         </div>
 
+        <div *ngIf="activity?.exclusionNote" class="col-span-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            {{ activity.exclusionNote }}
+        </div>
+
         <!-- Total -->
         <div class="col-span-6 flex justify-end border border-accent-900 rounded-md p-4">
             <span class="text-gray-500 mr-2">ZAR</span>
             <span class="text-xl font-bold">{{ getTotalPrice() }}</span>
         </div>
 
-        <!-- Date -->
+        <!-- Date and time slot -->
+        <div class="col-span-6 md:col-span-3">
+            <label>Pick date</label>
+            <input type="date"
+                   class="mt-2 pl-2 text-lg w-full h-12 border border-accent-900 rounded-lg"
+                   [formControl]="dateControl">
+        </div>
+
         <div class="col-span-6">
-            <label>Pick date & time (10am - 5pm)</label>
-            <div class="flex border border-accent-900 h-12 rounded-lg mt-2">
-                <input matInput
-                       class="ml-3 w-full"
-                       [ngxMatDatetimePicker]="picker"
-                       [formControl]="dateControl">
-
-                <ngx-mat-datetime-picker #picker></ngx-mat-datetime-picker>
-
-                <mat-datepicker-toggle matSuffix [for]="picker">
-                    <mat-icon matDatepickerToggleIcon>
-                        <i class="ph ph-calendar icon-size-5 text-dark"></i>
-                    </mat-icon>
-                </mat-datepicker-toggle>
+            <label class="mb-2 block">Select time slot</label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button *ngFor="let slot of timeSlots"
+                        type="button"
+                        (click)="selectTimeSlot(slot)"
+                        class="h-11 rounded-md border text-sm font-semibold transition"
+                        [class.bg-purple-900]="f.timeSlot.value === slot"
+                        [class.text-white]="f.timeSlot.value === slot"
+                        [class.border-purple-900]="f.timeSlot.value === slot"
+                        [class.border-accent-900]="f.timeSlot.value !== slot"
+                        [class.text-dark]="f.timeSlot.value !== slot">
+                    {{ slot }}
+                </button>
+            </div>
+            <div class="mt-2 text-xs text-gray-500">
+                Time slots run from 10:00 to 15:00.
             </div>
         </div>
 
