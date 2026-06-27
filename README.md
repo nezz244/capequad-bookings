@@ -1,4 +1,4 @@
-# Cape Adrenaline Bookings
+# capeadrenaline_management
 
 Admin system for recording quad biking bookings from platforms such as GetYourGuide, Fomo, Hyperli, Ontours, walk-ins, and direct customers.
 
@@ -40,3 +40,5 @@ Booking income is calculated from platform commission settings:
 Admins can change these in the in-app Settings screen. Financial summaries use net booking income: gross booking amount minus platform commission.
 
 Bookings, manual income, expenses, and commission setting changes are stamped with the logged-in Firebase account name/email so records show who created them.
+
+Each platform can also have multiple accounts, for example separate Fomo, Hyperli, or GetYourGuide accounts. Account-level commission overrides can be set in Settings; when an account override is blank, the platform default commission is used.

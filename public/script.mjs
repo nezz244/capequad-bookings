@@ -1,11 +1,12 @@
 let cachedBookings = [];
 let calendarCursor = startOfMonth(new Date());
 let platformCommissions = [];
+let platformAccounts = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     setDefaultBookingFilters();
     attachListeners();
-    await Promise.all([updateDashboard(), loadBookings(), loadPlatformCommissions()]);
+    await Promise.all([updateDashboard(), loadBookings(), loadPlatformCommissions(), loadPlatformAccounts()]);
 });
 
 function attachListeners() {
@@ -86,6 +87,21 @@ async function loadPlatformCommissions() {
     } catch (error) {
         console.error('Error loading commission settings:', error);
         platformCommissions = [];
+    }
+}
+
+async function loadPlatformAccounts() {
+    try {
+        const response = await fetch('/platform-accounts');
+
+        if (!response.ok) {
+            throw new Error('Could not load platform accounts');
+        }
+
+        platformAccounts = await response.json();
+    } catch (error) {
+        console.error('Error loading platform accounts:', error);
+        platformAccounts = [];
     }
 }
 
@@ -294,7 +310,11 @@ function recordBooking() {
                 </div>
                 <div class="col-md-4">
                     <label for="accountName" class="form-label">Account</label>
-                    <input type="text" id="accountName" class="form-control" placeholder="GYG account 1">
+                    <select id="accountName" class="form-select"></select>
+                </div>
+                <div class="col-md-4 d-none" id="customAccountWrap">
+                    <label for="customAccountName" class="form-label">New account</label>
+                    <input type="text" id="customAccountName" class="form-control" placeholder="Fomo account 2">
                 </div>
                 <div class="col-md-4">
                     <label for="productName" class="form-label">Product</label>
@@ -351,6 +371,9 @@ function recordBooking() {
 
     document.getElementById('submitBooking')?.addEventListener('click', submitBooking);
     document.getElementById('closePanel')?.addEventListener('click', closePanel);
+    document.getElementById('platform')?.addEventListener('change', updateAccountOptions);
+    document.getElementById('accountName')?.addEventListener('change', toggleCustomAccount);
+    updateAccountOptions();
 }
 
 async function submitBooking() {
@@ -361,7 +384,7 @@ async function submitBooking() {
         pax: Number(getValue('pax')),
         phone: getValue('phone'),
         platform: getValue('platform'),
-        account_name: getValue('accountName'),
+        account_name: getSelectedAccountName(),
         product_name: getValue('productName'),
         booking_date: getValue('bookingDate'),
         start_time: getValue('startTime'),
@@ -510,6 +533,9 @@ async function openSettings() {
     if (platformCommissions.length === 0) {
         await loadPlatformCommissions();
     }
+    if (platformAccounts.length === 0) {
+        await loadPlatformAccounts();
+    }
 
     openPanel(`
         <div class="booking-panel settings-panel">
@@ -540,6 +566,24 @@ async function openSettings() {
                     </label>
                 `).join('')}
             </div>
+            <hr class="settings-divider">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <p class="eyebrow mb-1">Accounts</p>
+                    <h3 class="mb-0">Platform accounts</h3>
+                </div>
+            </div>
+            <div class="settings-list" id="accountSettingsList">
+                ${platformAccounts.map(renderAccountSettingsRow).join('')}
+            </div>
+            <div class="add-account-row mt-3">
+                <select id="newAccountPlatform" class="form-select">
+                    ${getPlatformNames().map((platform) => `<option value="${escapeHtml(platform)}">${escapeHtml(platform)}</option>`).join('')}
+                </select>
+                <input id="newAccountName" type="text" class="form-control" placeholder="Account name">
+                <input id="newAccountCommission" type="number" min="0" max="100" step="0.01" class="form-control" placeholder="Override %">
+                <button type="button" id="addAccountRow" class="btn btn-outline-primary">Add Account</button>
+            </div>
             <div class="d-flex align-items-center gap-2 mt-4">
                 <button type="button" id="saveCommissions" class="btn btn-primary">Save Settings</button>
                 <span id="settingsStatus" class="text-muted"></span>
@@ -549,6 +593,7 @@ async function openSettings() {
 
     document.getElementById('closePanel')?.addEventListener('click', closePanel);
     document.getElementById('saveCommissions')?.addEventListener('click', saveCommissions);
+    document.getElementById('addAccountRow')?.addEventListener('click', addAccountSettingsRow);
 }
 
 async function saveCommissions() {
@@ -558,6 +603,15 @@ async function saveCommissions() {
         platform_name: input.dataset.platform,
         commission_rate: Number(input.value),
     }));
+    const accounts = [...document.querySelectorAll('.account-settings-row')].map((row) => {
+        const commissionValue = row.querySelector('.account-commission-input').value.trim();
+        return {
+            platform_name: row.querySelector('.account-platform-input').value,
+            account_name: row.querySelector('.account-name-input').value,
+            commission_rate: commissionValue === '' ? null : Number(commissionValue),
+            is_active: row.querySelector('.account-active-input').checked,
+        };
+    });
 
     if (status) status.textContent = 'Saving...';
     if (button) button.disabled = true;
@@ -578,6 +632,21 @@ async function saveCommissions() {
         }
 
         platformCommissions = data.commissions;
+        const accountsResponse = await fetch('/platform-accounts', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                accounts,
+                created_by: getAdminName(),
+            }),
+        });
+        const accountsData = await accountsResponse.json();
+
+        if (!accountsResponse.ok) {
+            throw new Error(accountsData.error || 'Could not save account settings');
+        }
+
+        platformAccounts = accountsData.accounts;
         closePanel();
         await Promise.all([updateDashboard(), loadBookings()]);
         showMessage('Commission settings updated.', 'success');
@@ -586,6 +655,90 @@ async function saveCommissions() {
     } finally {
         if (button) button.disabled = false;
     }
+}
+
+function updateAccountOptions() {
+    const platform = getValue('platform');
+    const accountSelect = document.getElementById('accountName');
+    if (!accountSelect) return;
+
+    const accounts = platformAccounts.filter((account) => account.platform_name === platform && Number(account.is_active) === 1);
+    accountSelect.innerHTML = `
+        <option value="">No account</option>
+        ${accounts.map((account) => `<option value="${escapeHtml(account.account_name)}">${escapeHtml(account.account_name)}</option>`).join('')}
+        <option value="__custom__">Add new account...</option>
+    `;
+    toggleCustomAccount();
+}
+
+function toggleCustomAccount() {
+    const accountSelect = document.getElementById('accountName');
+    const customWrap = document.getElementById('customAccountWrap');
+    if (!accountSelect || !customWrap) return;
+
+    customWrap.classList.toggle('d-none', accountSelect.value !== '__custom__');
+}
+
+function getSelectedAccountName() {
+    const accountValue = getValue('accountName');
+    return accountValue === '__custom__' ? getValue('customAccountName') : accountValue;
+}
+
+function renderAccountSettingsRow(account) {
+    const commissionValue = account.commission_rate == null ? '' : Number(account.commission_rate).toFixed(2);
+    return `
+        <label class="commission-row account-settings-row">
+            <span>
+                <strong>${escapeHtml(account.account_name)}</strong>
+                <small>${escapeHtml(account.platform_name)} account</small>
+            </span>
+            <input type="hidden" class="account-platform-input" value="${escapeHtml(account.platform_name)}">
+            <input type="hidden" class="account-name-input" value="${escapeHtml(account.account_name)}">
+            <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                class="account-commission-input"
+                value="${commissionValue}"
+                placeholder="Default"
+            >
+            <span class="account-active-cell">
+                <input type="checkbox" class="account-active-input" ${Number(account.is_active) === 1 ? 'checked' : ''}>
+                <em>Active</em>
+            </span>
+        </label>
+    `;
+}
+
+function addAccountSettingsRow() {
+    const platform = getValue('newAccountPlatform');
+    const accountName = getValue('newAccountName');
+    const commissionValue = getValue('newAccountCommission');
+    const list = document.getElementById('accountSettingsList');
+
+    if (!platform || !accountName || !list) return;
+
+    const exists = [...document.querySelectorAll('.account-settings-row')].some((row) => (
+        row.querySelector('.account-platform-input').value.toLowerCase() === platform.toLowerCase() &&
+        row.querySelector('.account-name-input').value.toLowerCase() === accountName.toLowerCase()
+    ));
+
+    if (exists) return;
+
+    list.insertAdjacentHTML('beforeend', renderAccountSettingsRow({
+        platform_name: platform,
+        account_name: accountName,
+        commission_rate: commissionValue === '' ? null : Number(commissionValue),
+        is_active: 1,
+    }));
+    document.getElementById('newAccountName').value = '';
+    document.getElementById('newAccountCommission').value = '';
+}
+
+function getPlatformNames() {
+    const platforms = platformCommissions.map((commission) => commission.platform_name);
+    return platforms.length ? platforms : ['GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'];
 }
 
 function openPanel(html) {

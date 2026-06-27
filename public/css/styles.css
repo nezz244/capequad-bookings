@@ -12299,7 +12299,7 @@ body.ops-page {
 
 .commission-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 24px;
+  grid-template-columns: minmax(0, 1fr) 120px auto;
   align-items: center;
   gap: 12px;
   padding: 14px;
@@ -12328,6 +12328,36 @@ body.ops-page {
   color: var(--ca-muted);
   font-style: normal;
   font-weight: 900;
+}
+
+.settings-divider {
+  margin: 22px 0;
+  border: 0;
+  border-top: 1px solid var(--ca-line);
+}
+
+.account-active-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.account-active-cell input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+}
+
+.add-account-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 120px auto;
+  gap: 10px;
+}
+
+.add-account-row input,
+.add-account-row select {
+  min-height: 42px;
 }
 
 #listContainer {
@@ -12463,6 +12493,10 @@ body.ops-page {
   }
 
   .commission-row {
+    grid-template-columns: 1fr;
+  }
+
+  .add-account-row {
     grid-template-columns: 1fr;
   }
 

@@ -97,6 +97,20 @@ async function ensureTables() {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS platform_accounts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            platform_name VARCHAR(80) NOT NULL,
+            account_name VARCHAR(120) NOT NULL,
+            commission_rate DECIMAL(5, 2),
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            updated_by VARCHAR(160),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_platform_account (platform_name, account_name),
+            INDEX idx_platform_account_platform (platform_name)
+        )
+    `);
     await ensureColumn('incomes', 'created_by', 'VARCHAR(160)');
     await ensureColumn('expenses', 'created_by', 'VARCHAR(160)');
 
@@ -107,6 +121,14 @@ async function ensureTables() {
             ON DUPLICATE KEY UPDATE platform_name = platform_name
         `, [platform, rate]);
     }
+
+    await db.query(`
+        INSERT INTO platform_accounts (platform_name, account_name)
+        SELECT DISTINCT platform, account_name
+        FROM bookings
+        WHERE account_name IS NOT NULL AND account_name <> ''
+        ON DUPLICATE KEY UPDATE account_name = VALUES(account_name)
+    `);
 }
 
 ensureTables().catch((error) => {
@@ -132,12 +154,14 @@ function bookingIncomeSelect(whereClause = '') {
             b.booking_date,
             b.start_time,
             COALESCE(b.amount, 0) AS gross_amount,
-            COALESCE(pc.commission_rate, 0) AS commission_rate,
-            ROUND(COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100, 2) AS commission_amount,
-            ROUND(COALESCE(b.amount, 0) - (COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100), 2) AS net_amount,
+            COALESCE(pa.commission_rate, pc.commission_rate, 0) AS commission_rate,
+            CASE WHEN pa.commission_rate IS NULL THEN 'platform' ELSE 'account' END AS commission_source,
+            ROUND(COALESCE(b.amount, 0) * COALESCE(pa.commission_rate, pc.commission_rate, 0) / 100, 2) AS commission_amount,
+            ROUND(COALESCE(b.amount, 0) - (COALESCE(b.amount, 0) * COALESCE(pa.commission_rate, pc.commission_rate, 0) / 100), 2) AS net_amount,
             b.created_by
         FROM bookings b
         LEFT JOIN platform_commissions pc ON LOWER(pc.platform_name) = LOWER(b.platform)
+        LEFT JOIN platform_accounts pa ON LOWER(pa.platform_name) = LOWER(b.platform) AND LOWER(pa.account_name) = LOWER(b.account_name)
         ${whereClause}
     `;
 }
@@ -345,6 +369,67 @@ app.put('/platform-commissions', async (req, res) => {
     }
 });
 
+app.get('/platform-accounts', async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT id, platform_name, account_name, commission_rate, is_active, updated_by, created_at, updated_at
+            FROM platform_accounts
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name, account_name
+        `);
+
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching platform accounts:', error);
+        res.status(500).json({ error: 'Failed to fetch platform accounts' });
+    }
+});
+
+app.put('/platform-accounts', async (req, res) => {
+    const accounts = Array.isArray(req.body.accounts) ? req.body.accounts : [];
+    const updatedBy = getCreatedBy(req.body);
+
+    if (accounts.length === 0) {
+        return res.status(400).json({ error: 'At least one platform account is required.' });
+    }
+
+    try {
+        for (const account of accounts) {
+            const platformName = normaliseBlank(account.platform_name);
+            const accountName = normaliseBlank(account.account_name);
+            const commissionRate = account.commission_rate === '' || account.commission_rate == null ? null : Number(account.commission_rate);
+            const isActive = account.is_active === false || account.is_active === 0 || account.is_active === '0' ? 0 : 1;
+
+            if (!isValidString(platformName) || !isValidString(accountName)) {
+                return res.status(400).json({ error: 'Platform and account name are required.' });
+            }
+
+            if (commissionRate !== null && (Number.isNaN(commissionRate) || commissionRate < 0 || commissionRate > 100)) {
+                return res.status(400).json({ error: 'Account commission rates must be between 0 and 100.' });
+            }
+
+            await db.query(`
+                INSERT INTO platform_accounts (platform_name, account_name, commission_rate, is_active, updated_by)
+                VALUES (?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    commission_rate = VALUES(commission_rate),
+                    is_active = VALUES(is_active),
+                    updated_by = VALUES(updated_by)
+            `, [platformName, accountName, commissionRate, isActive, updatedBy]);
+        }
+
+        const [rows] = await db.query(`
+            SELECT id, platform_name, account_name, commission_rate, is_active, updated_by, created_at, updated_at
+            FROM platform_accounts
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name, account_name
+        `);
+
+        res.json({ success: true, accounts: rows });
+    } catch (error) {
+        console.error('Error updating platform accounts:', error);
+        res.status(500).json({ error: 'Failed to update platform accounts' });
+    }
+});
+
 app.get('/finance/summary', async (req, res) => {
     try {
         const [incomeRows] = await db.query(`
@@ -414,6 +499,7 @@ app.get('/bookings', async (req, res) => {
                 calendar_error,
                 gross_amount,
                 commission_rate,
+                commission_source,
                 commission_amount,
                 net_amount,
                 created_at,
@@ -422,11 +508,13 @@ app.get('/bookings', async (req, res) => {
                 SELECT
                     b.*,
                     COALESCE(b.amount, 0) AS gross_amount,
-                    COALESCE(pc.commission_rate, 0) AS commission_rate,
-                    ROUND(COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100, 2) AS commission_amount,
-                    ROUND(COALESCE(b.amount, 0) - (COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100), 2) AS net_amount
+                    COALESCE(pa.commission_rate, pc.commission_rate, 0) AS commission_rate,
+                    CASE WHEN pa.commission_rate IS NULL THEN 'platform' ELSE 'account' END AS commission_source,
+                    ROUND(COALESCE(b.amount, 0) * COALESCE(pa.commission_rate, pc.commission_rate, 0) / 100, 2) AS commission_amount,
+                    ROUND(COALESCE(b.amount, 0) - (COALESCE(b.amount, 0) * COALESCE(pa.commission_rate, pc.commission_rate, 0) / 100), 2) AS net_amount
                 FROM bookings b
                 LEFT JOIN platform_commissions pc ON LOWER(pc.platform_name) = LOWER(b.platform)
+                LEFT JOIN platform_accounts pa ON LOWER(pa.platform_name) = LOWER(b.platform) AND LOWER(pa.account_name) = LOWER(b.account_name)
             ) bookings_with_income
             ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
             ORDER BY booking_date DESC, start_time DESC
@@ -520,6 +608,14 @@ app.post('/bookings', async (req, res) => {
             booking.notes,
             booking.created_by,
         ]);
+
+        if (booking.account_name) {
+            await db.query(`
+                INSERT INTO platform_accounts (platform_name, account_name, updated_by)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE account_name = VALUES(account_name)
+            `, [booking.platform, booking.account_name, booking.created_by]);
+        }
 
         res.status(201).json({
             success: true,
