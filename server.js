@@ -19,6 +19,7 @@ app.use(bodyParser.json()); // Body parser middleware
 
 app.get('/health', async (req, res) => {
     try {
+        await db.query('SELECT 1');
         res.status(200).json({ message: 'Database connection is healthy!' });
     } catch (error) {
         console.error('Database connection failed:', error);
@@ -38,16 +39,112 @@ const db = mysql.createPool({
     connectTimeout: 10000, // Increase the timeout if necessary
 });
 
+const defaultCommissions = [
+    ['GetYourGuide', 34],
+    ['Fomo', 25],
+    ['Hyperli', 20],
+    ['Ontours', 0],
+    ['Walk-in', 0],
+    ['Direct', 0],
+    ['Other', 0],
+];
+
+async function ensureColumn(table, column, definition) {
+    const [columns] = await db.query(`SHOW COLUMNS FROM ${table} LIKE ?`, [column]);
+
+    if (columns.length === 0) {
+        await db.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+}
+
+async function ensureTables() {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            customer_name VARCHAR(120) NOT NULL,
+            pax INT NOT NULL,
+            phone VARCHAR(40),
+            platform VARCHAR(80) NOT NULL,
+            account_name VARCHAR(120),
+            product_name VARCHAR(160),
+            booking_date DATE NOT NULL,
+            start_time TIME NOT NULL,
+            duration_minutes INT NOT NULL DEFAULT 60,
+            location VARCHAR(180),
+            payment_status VARCHAR(80),
+            amount DECIMAL(10, 2),
+            notes TEXT,
+            created_by VARCHAR(160),
+            calendar_event_id VARCHAR(255),
+            calendar_status VARCHAR(40) NOT NULL DEFAULT 'visible',
+            calendar_error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_booking_date_start_time (booking_date, start_time),
+            INDEX idx_platform (platform)
+        )
+    `);
+    await db.query(`
+        ALTER TABLE bookings
+        MODIFY calendar_status VARCHAR(40) NOT NULL DEFAULT 'visible'
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS platform_commissions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            platform_name VARCHAR(80) NOT NULL UNIQUE,
+            commission_rate DECIMAL(5, 2) NOT NULL DEFAULT 0,
+            updated_by VARCHAR(160),
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    `);
+    await ensureColumn('incomes', 'created_by', 'VARCHAR(160)');
+    await ensureColumn('expenses', 'created_by', 'VARCHAR(160)');
+
+    for (const [platform, rate] of defaultCommissions) {
+        await db.query(`
+            INSERT INTO platform_commissions (platform_name, commission_rate)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE platform_name = platform_name
+        `, [platform, rate]);
+    }
+}
+
+ensureTables().catch((error) => {
+    console.error('Failed to initialise database tables:', error);
+});
+
 
 // Validate user input
 const isValidString = (str) => typeof str === 'string' && str.trim().length > 0;
 const isValidNumber = (num) => typeof num === 'number' && num > 0;
 const isValidDate = (date) => !isNaN(Date.parse(date));
+const normaliseBlank = (value) => typeof value === 'string' && value.trim() === '' ? null : value;
+const getCreatedBy = (body) => normaliseBlank(body.created_by) || normaliseBlank(body.admin_name) || 'Unknown admin';
+
+function bookingIncomeSelect(whereClause = '') {
+    return `
+        SELECT
+            b.id,
+            b.customer_name,
+            b.platform,
+            b.account_name,
+            b.product_name,
+            b.booking_date,
+            b.start_time,
+            COALESCE(b.amount, 0) AS gross_amount,
+            COALESCE(pc.commission_rate, 0) AS commission_rate,
+            ROUND(COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100, 2) AS commission_amount,
+            ROUND(COALESCE(b.amount, 0) - (COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100), 2) AS net_amount,
+            b.created_by
+        FROM bookings b
+        LEFT JOIN platform_commissions pc ON LOWER(pc.platform_name) = LOWER(b.platform)
+        ${whereClause}
+    `;
+}
 
 app.post('/expenses', async (req, res) => {
     const { name, amount, date, notes } = req.body;
-
-    console.log('Validating expense data:', { name, amount, date, notes });
+    const createdBy = getCreatedBy(req.body);
 
     // Validate input
     if (!isValidString(name)) {
@@ -69,7 +166,8 @@ app.post('/expenses', async (req, res) => {
 
     try {
         // Insert into the database
-        await db.query('INSERT INTO expenses (expense_name, amount, expense_date, notes) VALUES (?, ?, ?, ?)', [name, amount, date, notes]);
+        await db.query('INSERT INTO expenses (expense_name, amount, expense_date, notes, created_by) VALUES (?, ?, ?, ?, ?)', [name, amount, date, notes, createdBy]);
+        res.json({ success: true });
 
     } catch (error) {
         console.error(error);
@@ -114,10 +212,14 @@ app.get('/chacco/incomes/data', async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT
-                DATE_FORMAT(date, '%Y-%m') AS month,
+                DATE_FORMAT(transaction_date, '%Y-%m') AS month,
                 SUM(amount) AS totalIncome
-            FROM incomes
-            GROUP BY DATE_FORMAT(date, '%Y-%m')
+            FROM (
+                SELECT date AS transaction_date, amount FROM incomes
+                UNION ALL
+                SELECT booking_date AS transaction_date, net_amount AS amount FROM (${bookingIncomeSelect()}) booking_income
+            ) monthly_income
+            GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
             ORDER BY month;
         `);
 
@@ -131,6 +233,7 @@ app.get('/chacco/incomes/data', async (req, res) => {
 app.post('/incomes', async (req, res) => {
     try {
         const { name, amount, date, notes } = req.body;
+        const createdBy = getCreatedBy(req.body);
 
         // Input validation
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -150,8 +253,8 @@ app.post('/incomes', async (req, res) => {
         }
 
         // Insert into the database using await
-        const query = 'INSERT INTO incomes (name, amount, date, notes) VALUES (?, ?, ?, ?)';
-        await db.query(query, [name, amount, date, notes]);
+        const query = 'INSERT INTO incomes (name, amount, date, notes, created_by) VALUES (?, ?, ?, ?, ?)';
+        await db.query(query, [name, amount, date, notes, createdBy]);
 
         // Success response
         res.json({ success: true });
@@ -163,15 +266,272 @@ app.post('/incomes', async (req, res) => {
 });
 app.get('/chacco/incomes/total', async (req, res) => {
     try {
-        const [rows] = await db.query(`
-            SELECT SUM(amount) AS totalIncome FROM incomes
+        const [manualRows] = await db.query(`
+            SELECT COALESCE(SUM(amount), 0) AS manualIncome FROM incomes
+        `);
+        const [bookingRows] = await db.query(`
+            SELECT
+                COALESCE(SUM(gross_amount), 0) AS bookingGrossIncome,
+                COALESCE(SUM(commission_amount), 0) AS bookingCommission,
+                COALESCE(SUM(net_amount), 0) AS bookingNetIncome
+            FROM (${bookingIncomeSelect()}) booking_income
         `);
 
-        const totalIncome = rows[0].totalIncome || 0;
-        res.json({ totalIncome });
+        const manualIncome = Number(manualRows[0].manualIncome) || 0;
+        const bookingNetIncome = Number(bookingRows[0].bookingNetIncome) || 0;
+
+        res.json({
+            totalIncome: manualIncome + bookingNetIncome,
+            manualIncome,
+            bookingGrossIncome: Number(bookingRows[0].bookingGrossIncome) || 0,
+            bookingCommission: Number(bookingRows[0].bookingCommission) || 0,
+            bookingNetIncome,
+        });
     } catch (error) {
         console.error('Error fetching total income:', error);
         res.status(500).json({ error: 'Failed to fetch total income' });
+    }
+});
+
+app.get('/platform-commissions', async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT platform_name, commission_rate, updated_by, updated_at
+            FROM platform_commissions
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name
+        `);
+
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching platform commissions:', error);
+        res.status(500).json({ error: 'Failed to fetch platform commissions' });
+    }
+});
+
+app.put('/platform-commissions', async (req, res) => {
+    const commissions = Array.isArray(req.body.commissions) ? req.body.commissions : [];
+    const updatedBy = getCreatedBy(req.body);
+
+    if (commissions.length === 0) {
+        return res.status(400).json({ error: 'At least one commission setting is required.' });
+    }
+
+    try {
+        for (const commission of commissions) {
+            const platformName = normaliseBlank(commission.platform_name);
+            const commissionRate = Number(commission.commission_rate);
+
+            if (!isValidString(platformName) || Number.isNaN(commissionRate) || commissionRate < 0 || commissionRate > 100) {
+                return res.status(400).json({ error: 'Commission rates must be between 0 and 100.' });
+            }
+
+            await db.query(`
+                INSERT INTO platform_commissions (platform_name, commission_rate, updated_by)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE commission_rate = VALUES(commission_rate), updated_by = VALUES(updated_by)
+            `, [platformName, commissionRate, updatedBy]);
+        }
+
+        const [rows] = await db.query(`
+            SELECT platform_name, commission_rate, updated_by, updated_at
+            FROM platform_commissions
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name
+        `);
+
+        res.json({ success: true, commissions: rows });
+    } catch (error) {
+        console.error('Error updating platform commissions:', error);
+        res.status(500).json({ error: 'Failed to update platform commissions' });
+    }
+});
+
+app.get('/finance/summary', async (req, res) => {
+    try {
+        const [incomeRows] = await db.query(`
+            SELECT
+                COALESCE((SELECT SUM(amount) FROM incomes), 0) AS manualIncome,
+                COALESCE(SUM(gross_amount), 0) AS bookingGrossIncome,
+                COALESCE(SUM(commission_amount), 0) AS bookingCommission,
+                COALESCE(SUM(net_amount), 0) AS bookingNetIncome
+            FROM (${bookingIncomeSelect()}) booking_income
+        `);
+        const [expenseRows] = await db.query('SELECT COALESCE(SUM(amount), 0) AS totalExpenses FROM expenses');
+        const summary = incomeRows[0];
+        const manualIncome = Number(summary.manualIncome) || 0;
+        const bookingNetIncome = Number(summary.bookingNetIncome) || 0;
+        const totalExpenses = Number(expenseRows[0].totalExpenses) || 0;
+
+        res.json({
+            manualIncome,
+            bookingGrossIncome: Number(summary.bookingGrossIncome) || 0,
+            bookingCommission: Number(summary.bookingCommission) || 0,
+            bookingNetIncome,
+            totalIncome: manualIncome + bookingNetIncome,
+            totalExpenses,
+            balance: manualIncome + bookingNetIncome - totalExpenses,
+        });
+    } catch (error) {
+        console.error('Error fetching finance summary:', error);
+        res.status(500).json({ error: 'Failed to fetch finance summary' });
+    }
+});
+
+app.get('/bookings', async (req, res) => {
+    const { from, to } = req.query;
+    const params = [];
+    const where = [];
+
+    if (from) {
+        where.push('booking_date >= ?');
+        params.push(from);
+    }
+
+    if (to) {
+        where.push('booking_date <= ?');
+        params.push(to);
+    }
+
+    try {
+        const [rows] = await db.query(`
+            SELECT
+                id,
+                customer_name,
+                pax,
+                phone,
+                platform,
+                account_name,
+                product_name,
+                DATE_FORMAT(booking_date, '%Y-%m-%d') AS booking_date,
+                TIME_FORMAT(start_time, '%H:%i') AS start_time,
+                duration_minutes,
+                location,
+                payment_status,
+                amount,
+                notes,
+                created_by,
+                calendar_event_id,
+                calendar_status,
+                calendar_error,
+                gross_amount,
+                commission_rate,
+                commission_amount,
+                net_amount,
+                created_at,
+                updated_at
+            FROM (
+                SELECT
+                    b.*,
+                    COALESCE(b.amount, 0) AS gross_amount,
+                    COALESCE(pc.commission_rate, 0) AS commission_rate,
+                    ROUND(COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100, 2) AS commission_amount,
+                    ROUND(COALESCE(b.amount, 0) - (COALESCE(b.amount, 0) * COALESCE(pc.commission_rate, 0) / 100), 2) AS net_amount
+                FROM bookings b
+                LEFT JOIN platform_commissions pc ON LOWER(pc.platform_name) = LOWER(b.platform)
+            ) bookings_with_income
+            ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+            ORDER BY booking_date DESC, start_time DESC
+        `, params);
+
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching bookings:', error);
+        res.status(500).json({ error: 'Failed to fetch bookings' });
+    }
+});
+
+app.post('/bookings', async (req, res) => {
+    const booking = {
+        customer_name: normaliseBlank(req.body.customer_name),
+        pax: Number(req.body.pax),
+        phone: normaliseBlank(req.body.phone),
+        platform: normaliseBlank(req.body.platform),
+        account_name: normaliseBlank(req.body.account_name),
+        product_name: normaliseBlank(req.body.product_name),
+        booking_date: req.body.booking_date,
+        start_time: req.body.start_time,
+        duration_minutes: Number(req.body.duration_minutes) || 60,
+        location: normaliseBlank(req.body.location),
+        payment_status: normaliseBlank(req.body.payment_status),
+        amount: req.body.amount === '' || req.body.amount == null ? null : Number(req.body.amount),
+        notes: normaliseBlank(req.body.notes),
+        created_by: getCreatedBy(req.body),
+    };
+
+    if (!isValidString(booking.customer_name)) {
+        return res.status(400).json({ error: 'Customer name is required.' });
+    }
+
+    if (!Number.isInteger(booking.pax) || booking.pax < 1) {
+        return res.status(400).json({ error: 'Pax must be a positive whole number.' });
+    }
+
+    if (!isValidString(booking.platform)) {
+        return res.status(400).json({ error: 'Platform is required.' });
+    }
+
+    if (!isValidDate(booking.booking_date)) {
+        return res.status(400).json({ error: 'Booking date is required.' });
+    }
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(booking.start_time)) {
+        return res.status(400).json({ error: 'Start time must use HH:MM format.' });
+    }
+
+    if (!Number.isInteger(booking.duration_minutes) || booking.duration_minutes < 15) {
+        return res.status(400).json({ error: 'Duration must be at least 15 minutes.' });
+    }
+
+    if (booking.amount !== null && (Number.isNaN(booking.amount) || booking.amount < 0)) {
+        return res.status(400).json({ error: 'Amount must be zero or more.' });
+    }
+
+    try {
+        const [result] = await db.query(`
+            INSERT INTO bookings (
+                customer_name,
+                pax,
+                phone,
+                platform,
+                account_name,
+                product_name,
+                booking_date,
+                start_time,
+                duration_minutes,
+                location,
+                payment_status,
+                amount,
+                notes,
+                created_by,
+                calendar_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible')
+        `, [
+            booking.customer_name,
+            booking.pax,
+            booking.phone,
+            booking.platform,
+            booking.account_name,
+            booking.product_name,
+            booking.booking_date,
+            booking.start_time,
+            booking.duration_minutes,
+            booking.location,
+            booking.payment_status,
+            booking.amount,
+            booking.notes,
+            booking.created_by,
+        ]);
+
+        res.status(201).json({
+            success: true,
+            booking: {
+                id: result.insertId,
+                ...booking,
+                calendar_status: 'visible',
+            },
+        });
+    } catch (error) {
+        console.error('Error creating booking:', error);
+        res.status(500).json({ error: 'Failed to create booking' });
     }
 });
 
@@ -182,7 +542,8 @@ app.get('/chacco/balance_breakdown/all', async (req, res) => {
                 expense_name,
                 amount,
                 expense_date,
-                notes
+                notes,
+                created_by
             FROM
                 expenses
         `);
@@ -191,23 +552,27 @@ app.get('/chacco/balance_breakdown/all', async (req, res) => {
                 name,
                 amount,
                 date,
-                notes
+                notes,
+                created_by
             FROM
                 incomes
         `);
+        const [bookingIncomeData] = await db.query(`
+            SELECT
+                CONCAT('Booking - ', customer_name, ' (', platform, ')') AS name,
+                net_amount AS amount,
+                booking_date AS date,
+                CONCAT('Gross R', gross_amount, ', commission ', commission_rate, '% = R', commission_amount) AS notes,
+                created_by
+            FROM (${bookingIncomeSelect()}) booking_income
+        `);
 
-        // 👇 Aggregate data into a single object
         const responseData = {
-            incomes: incomesData,
+            incomes: [...incomesData, ...bookingIncomeData],
             expenses: expensesData
 
         };
 
-        // 👇 Log the full response JSON
-        console.log('Sending response:', JSON.stringify(responseData, null, 2));
-        console.log(incomesData);
-        console.log(expensesData);
-        // ✅ Send the response
         res.json(responseData);
 
     } catch (error) {

@@ -1,327 +1,692 @@
-import {showFormPopup} from "./form_popup.js";
-function closePopup() {
-    const popup = document.querySelector('.popup-overlay');
-    if (popup) {
-        popup.remove();
-    }
-}
-// Attach event listeners on page load
+let cachedBookings = [];
+let calendarCursor = startOfMonth(new Date());
+let platformCommissions = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
-    await updateDashboard();
+    setDefaultBookingFilters();
     attachListeners();
-    enableSearch(); // Initialize the search functionality
+    await Promise.all([updateDashboard(), loadBookings(), loadPlatformCommissions()]);
 });
-function enableSearch() {
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', (event) => {
-        const searchTerm = event.target.valueOf()
-        fetchAndFilterClients(searchTerm);
-    });
-}
-// Function to fetch and filter clients
-function fetchAndFilterClients(searchTerm) {
-    const searchInput = searchTerm;
-    // Fetch all clients from the API
-    fetch('/chacco-all')
-        .then(response => response.json())
-        .then(data => {
-            // Ensure data is an array
-            if (Array.isArray(data)) {
-                // Trim search term and client names to remove extra whitespace
-                const trimmedSearchTerm = String(searchInput.value).trim().toLowerCase();
-                const filteredClients = data.filter(client => {
-                    // Access client_name correctly (from your data structure)
-                    const clientName = client.client_name.trim().toLowerCase();
-                    return clientName.includes(trimmedSearchTerm);
-                });
-                // Display filtered clients
-                displayClients(filteredClients);
-            }
-            else {
-                console.error('Expected an array but received:', data);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching clients:', error);
-        });
-}
-// Real-time search as the user types
-document.getElementById('searchInput').addEventListener('input', (event) => {
-    const searchTerm = event.target.valueOf();
-    fetchAndFilterClients(searchTerm);
-});
-function displayClients(clients) {
-    const listContainer = document.getElementById('listContainer');
-    const searchInput = document.getElementById('searchInput');
-    if (!listContainer) {
-        console.error("listContainer element not found");
-        return;
-    }
-    if (!searchInput) {
-        console.error("searchInput element not found");
-        return;
-    }
-    // Check for empty search input
-    if (searchInput.value.trim() === '') {
-        listContainer.innerHTML = ''; // Clear the list container if there's no text
-        return;
-    }
-    // Create the table structure
-    let listHTML = `
-    <div class="clients-popup-container">
-        <div class="clients-popup">
-            <h3>Clients List</h3>
-            <table class="clients-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-    // Add each client as a row in the table
-    clients.forEach(client => {
-        listHTML += `
-            <tr>
-                <td>${client.client_name}</td>
-                <td><button class="btn details-btn" data-id="${client.client_id}">Details</button></td>
-            </tr>`;
-    });
-    listHTML += `</tbody></table>
-        </div>
-    </div>`;
-    // Display the filtered clients
-    listContainer.innerHTML = listHTML;
-    // Add event listener for details button
-    listContainer.addEventListener('click', handleDetailsButtonClick);
-    // Style the table with modern design
-    const table = document.querySelector('.clients-table');
-    table.style.width = '100%';
-    table.style.borderCollapse = 'collapse';
-    table.style.marginTop = '20px';
-    const thElements = table.querySelectorAll('th');
-    thElements.forEach(th => {
-        th.style.padding = '12px';
-        th.style.textAlign = 'left';
-        th.style.backgroundColor = '#f4f4f4';
-        th.style.borderBottom = '2px solid #ddd';
-        th.style.fontWeight = 'bold';
-    });
-    const tdElements = table.querySelectorAll('td');
-    tdElements.forEach(td => {
-        td.style.padding = '10px';
-        td.style.borderBottom = '1px solid #ddd';
-    });
-    // Style the buttons
-    const buttons = document.querySelectorAll('.details-btn');
-    buttons.forEach(button => {
-        button.style.backgroundColor = '#007BFF';
-        button.style.color = '#fff';
-        button.style.padding = '8px 16px';
-        button.style.border = 'none';
-        button.style.borderRadius = '5px';
-        button.style.cursor = 'pointer';
-        button.style.fontSize = '14px';
-        button.style.transition = 'background-color 0.3s ease';
-        // Hover effect for buttons
-        button.addEventListener('mouseenter', function () {
-            button.style.backgroundColor = '#0056b3';
-        });
-        button.addEventListener('mouseleave', function () {
-            button.style.backgroundColor = '#007BFF';
-        });
-    });
-    // Style the popup container to be centered and float on the screen
-    const popupContainer = document.querySelector('.clients-popup-container');
-    popupContainer.style.position = 'fixed';
-    popupContainer.style.top = '0';
-    popupContainer.style.left = '0';
-    popupContainer.style.width = '100%';
-    popupContainer.style.height = '100%';
-    popupContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    popupContainer.style.display = 'flex';
-    popupContainer.style.justifyContent = 'center';
-    popupContainer.style.alignItems = 'center';
-    popupContainer.style.zIndex = '9999'; // Ensure it sits above other content
-    // Style the actual popup
-    const popup = document.querySelector('.clients-popup');
-    popup.style.backgroundColor = '#fff';
-    popup.style.padding = '20px';
-    popup.style.borderRadius = '8px';
-    popup.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.1)';
-    popup.style.maxWidth = '800px';
-    popup.style.width = '100%';
-    popup.style.maxHeight = '80vh'; // Limit the height to 80% of the viewport height
-    popup.style.overflowY = 'auto'; // Add vertical scroll if content overflows
-    // Optionally, add a close button to dismiss the popup
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Close';
-    closeButton.style.backgroundColor = '#f44336';
-    closeButton.style.color = '#fff';
-    closeButton.style.padding = '8px 16px';
-    closeButton.style.border = 'none';
-    closeButton.style.borderRadius = '5px';
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.position = 'absolute';
-    closeButton.style.top = '10px';
-    closeButton.style.right = '10px';
-    closeButton.addEventListener('click', () => {
-        listContainer.innerHTML = ''; // Clear the list container to remove the popup
-    });
-    popup.appendChild(closeButton);
-}
-function handleDetailsButtonClick(event) {
-    if (event.target.tagName === 'BUTTON' && event.target.dataset.id) {
-        showDetails(parseInt(event.target.dataset.id, 10)); // Access the correct data-id
-    }
-}
+
 function attachListeners() {
-document.getElementById('expensesButton').addEventListener('click', recordExpenses);
-document.getElementById('incomeButton').addEventListener('click', recordIncome);
-
-    //document.getElementById('logoutButton').addEventListener('click', logoutUser);
+    document.getElementById('bookingButton')?.addEventListener('click', recordBooking);
+    document.getElementById('quickBookingButton')?.addEventListener('click', recordBooking);
+    document.getElementById('expensesButton')?.addEventListener('click', recordExpenses);
+    document.getElementById('incomeButton')?.addEventListener('click', recordIncome);
+    document.getElementById('settingsButton')?.addEventListener('click', openSettings);
+    document.getElementById('refreshBookings')?.addEventListener('click', loadBookings);
+    document.getElementById('bookingFrom')?.addEventListener('change', loadBookings);
+    document.getElementById('bookingTo')?.addEventListener('change', loadBookings);
+    document.getElementById('searchInput')?.addEventListener('input', renderBookings);
+    document.getElementById('previousCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(-1));
+    document.getElementById('todayCalendarMonth')?.addEventListener('click', () => {
+        calendarCursor = startOfMonth(new Date());
+        setCalendarRangeInputs();
+        loadBookings();
+    });
+    document.getElementById('nextCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(1));
 }
-async function updateDashboard() {
-        try {
-            // Fetch the total income from other sources
-            const incomeResponse = await fetch('/chacco/incomes/total');
-            const totalIncomeData = await incomeResponse.json();
-            const totalIncome = parseFloat(totalIncomeData.totalIncome) || 0;
-            console.log("total income",totalIncome);
-            // Fetch the total expenses
-            const expensesResponse = await fetch('/chacco/expenses/total');
-            const expensesTotal = await expensesResponse.json();
-            console.log("expensesTotal",expensesTotal);
 
-            // ✅ Calculate total balance
-            const totalBalance =  totalIncome - expensesTotal.total;
-            // Update the dashboard
-            document.getElementById('currentBalance').textContent = totalBalance.toFixed(2);
-        } catch (error) {
-            console.error('Error updating dashboard:', error);
-        }
+function setDefaultBookingFilters() {
+    const fromInput = document.getElementById('bookingFrom');
+    const toInput = document.getElementById('bookingTo');
+
+    if (fromInput?.value) {
+        calendarCursor = startOfMonth(new Date(`${fromInput.value}T00:00:00`));
+    } else {
+        setCalendarRangeInputs();
     }
-function recordIncome() {
-    const formHTML = `
-    <div class="form-popup">
-        <h3>Record Income</h3>
-        <label for="incomeName">Income Name:</label>
-        <input type="text" id="incomeName" class="form-input"><br>
-        
-        <label for="incomeAmount">income Amount:</label>
-        <input type="text" id="incomeAmount" class="form-input"><br>
-        
-        <label for="incomeDate">Income Date:</label>
-        <input type="date" id="incomeDate" class="form-input"><br>
-        
-        <label for="incomeNotes">Notes:</label>
-        <input type="text" id="incomeNotes" class="form-input"><br>
-        
-        <button type="button" id="submitIncome" class="btn">Submit</button>
-        <button type="button" id="closeIncomeForm" class="btn">Cancel</button>
-    </div>`;
-    showFormPopup(formHTML, 0.7); // you can tweak the scale value
+}
 
-    // Event listeners for close button
-    document.getElementById('closeIncomeForm').addEventListener('click', async () => {
-        const popup = document.querySelector('.form-popup');
-        if (popup && popup.parentNode) {
-            popup.parentNode.removeChild(popup); // remove from actual parent
-            await updateDashboard();
+function setCalendarRangeInputs() {
+    const fromInput = document.getElementById('bookingFrom');
+    const toInput = document.getElementById('bookingTo');
+    const range = getCalendarMonthRange(calendarCursor);
+
+    if (fromInput) fromInput.value = toDateInputValue(range.firstVisibleDay);
+    if (toInput) toInput.value = toDateInputValue(range.lastVisibleDay);
+}
+
+function changeCalendarMonth(offset) {
+    calendarCursor = startOfMonth(new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + offset, 1));
+    setCalendarRangeInputs();
+    loadBookings();
+}
+
+function toDateInputValue(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+async function updateDashboard() {
+    try {
+        const response = await fetch('/finance/summary');
+        const summary = await response.json();
+
+        setMoneyText('currentBalance', summary.balance);
+        setMoneyText('bookingGrossIncome', summary.bookingGrossIncome);
+        setMoneyText('bookingCommission', summary.bookingCommission);
+    } catch (error) {
+        console.error('Error updating dashboard:', error);
+    }
+}
+
+async function loadPlatformCommissions() {
+    try {
+        const response = await fetch('/platform-commissions');
+
+        if (!response.ok) {
+            throw new Error('Could not load commission settings');
         }
 
+        platformCommissions = await response.json();
+    } catch (error) {
+        console.error('Error loading commission settings:', error);
+        platformCommissions = [];
+    }
+}
+
+async function loadBookings() {
+    const from = document.getElementById('bookingFrom')?.value;
+    const to = document.getElementById('bookingTo')?.value;
+    const params = new URLSearchParams();
+
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+
+    try {
+        const response = await fetch(`/bookings?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error('Could not load bookings');
+        }
+
+        cachedBookings = await response.json();
+        renderBookings();
+        renderCalendar();
+        updateBookingStats();
+    } catch (error) {
+        console.error('Error loading bookings:', error);
+        showMessage('Could not load bookings. Check that the server and database are running.', 'danger');
+    }
+}
+
+function renderBookings() {
+    const tbody = document.querySelector('#bookingsTable tbody');
+    const searchTerm = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
+
+    if (!tbody) return;
+
+    const bookings = cachedBookings.filter((booking) => {
+        if (!searchTerm) return true;
+
+        return [
+            booking.customer_name,
+            booking.phone,
+            booking.platform,
+            booking.account_name,
+            booking.product_name,
+            booking.location,
+            booking.payment_status,
+        ].filter(Boolean).join(' ').toLowerCase().includes(searchTerm);
     });
 
-    document.getElementById('submitIncome').addEventListener('click', submitIncome);
-}
-// Submit New Client Data
-function submitExpense() {
-    const expenseName = document.getElementById('expenseName').value;
-    const expenseAmount = document.getElementById('expenseAmount').value;
-    const expenseDate = document.getElementById('expenseDate').value;
-    const expenseNotes = document.getElementById('expenseNotes').value;
+    if (bookings.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="12" class="text-center text-muted py-4">No bookings found for this range.</td>
+            </tr>
+        `;
+        return;
+    }
 
-    const newExpense = {
-        name: expenseName,  // Change from 'expenseName' to 'name'
-        amount: parseFloat(expenseAmount),  // 'amount' is already correct
-        date: expenseDate,  // Change from 'expenseDate' to 'date'
-        notes: expenseNotes,  // Change from 'expenseNotes' to 'notes'
+    tbody.innerHTML = bookings.map((booking) => `
+        <tr>
+            <td>${escapeHtml(formatDate(booking.booking_date))}</td>
+            <td>${escapeHtml(booking.start_time)}</td>
+            <td>
+                <strong>${escapeHtml(booking.customer_name)}</strong>
+                ${booking.location ? `<div class="text-muted small">${escapeHtml(booking.location)}</div>` : ''}
+            </td>
+            <td>${escapeHtml(String(booking.pax))}</td>
+            <td>
+                ${escapeHtml(booking.platform)}
+                ${booking.account_name ? `<div class="text-muted small">${escapeHtml(booking.account_name)}</div>` : ''}
+            </td>
+            <td>${escapeHtml(booking.product_name || '-')}</td>
+            <td>${escapeHtml(booking.phone || '-')}</td>
+            <td>${formatMoney(booking.gross_amount)}</td>
+            <td>
+                ${formatMoney(booking.commission_amount)}
+                <div class="text-muted small">${formatPercent(booking.commission_rate)}</div>
+            </td>
+            <td><strong>${formatMoney(booking.net_amount)}</strong></td>
+            <td>${escapeHtml(booking.created_by || '-')}</td>
+            <td>${escapeHtml(booking.notes || '-')}</td>
+        </tr>
+    `).join('');
+}
+
+function renderCalendar() {
+    const calendarGrid = document.getElementById('calendarGrid');
+    const calendarTitle = document.getElementById('calendarTitle');
+
+    if (!calendarGrid) return;
+
+    const range = getCalendarMonthRange(calendarCursor);
+    const bookingsByDate = cachedBookings.reduce((groups, booking) => {
+        groups[booking.booking_date] = groups[booking.booking_date] || [];
+        groups[booking.booking_date].push(booking);
+        return groups;
+    }, {});
+    const days = [];
+    const cursor = new Date(range.firstVisibleDay);
+
+    while (cursor <= range.lastVisibleDay) {
+        days.push(new Date(cursor));
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    if (calendarTitle) {
+        calendarTitle.textContent = calendarCursor.toLocaleDateString('en-ZA', {
+            month: 'long',
+            year: 'numeric',
+        });
+    }
+
+    calendarGrid.innerHTML = `
+        ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => `
+            <div class="calendar-weekday">${day}</div>
+        `).join('')}
+        ${days.map((day) => {
+            const dateKey = toDateInputValue(day);
+            const isOutsideMonth = day.getMonth() !== calendarCursor.getMonth();
+            const isToday = dateKey === toDateInputValue(new Date());
+            const dayBookings = (bookingsByDate[dateKey] || []).sort(compareBookingTimes);
+
+            return `
+                <div class="calendar-day ${isOutsideMonth ? 'is-muted' : ''} ${isToday ? 'is-today' : ''}">
+                    <div class="calendar-day-header">
+                        <span>${day.getDate()}</span>
+                        ${dayBookings.length ? `<strong>${dayBookings.reduce((sum, booking) => sum + Number(booking.pax || 0), 0)} pax</strong>` : ''}
+                    </div>
+                    <div class="calendar-events">
+                        ${dayBookings.map(renderCalendarEvent).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('')}
+    `;
+}
+
+function renderCalendarEvent(booking) {
+    const platformClass = `platform-${normalisePlatformClass(booking.platform)}`;
+    const title = [
+        booking.customer_name,
+        `${booking.pax}pax`,
+        booking.phone,
+        booking.product_name,
+        booking.payment_status,
+        booking.notes,
+    ].filter(Boolean).join(' | ');
+
+    return `
+        <article class="calendar-event ${platformClass}" title="${escapeHtml(title)}">
+            <div class="calendar-event-time">${escapeHtml(booking.start_time)}</div>
+            <div class="calendar-event-main">
+                <strong>${escapeHtml(booking.customer_name)}</strong>
+                <span>${escapeHtml(booking.pax)}pax · ${escapeHtml(booking.platform)}</span>
+            </div>
+        </article>
+    `;
+}
+
+function updateBookingStats() {
+    const upcomingBookingsElement = document.getElementById('upcomingBookings');
+    const upcomingPaxElement = document.getElementById('upcomingPax');
+    const totalPax = cachedBookings.reduce((sum, booking) => sum + Number(booking.pax || 0), 0);
+
+    if (upcomingBookingsElement) {
+        upcomingBookingsElement.textContent = String(cachedBookings.length);
+    }
+
+    if (upcomingPaxElement) {
+        upcomingPaxElement.textContent = String(totalPax);
+    }
+}
+
+function recordBooking() {
+    const today = toDateInputValue(new Date());
+    const adminName = getAdminName();
+    openPanel(`
+        <div class="booking-panel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="mb-0">Record Booking</h3>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="customerName" class="form-label">Customer name</label>
+                    <input type="text" id="customerName" class="form-control" placeholder="Simone" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="pax" class="form-label">Pax</label>
+                    <input type="number" min="1" id="pax" class="form-control" value="2" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input type="tel" id="phone" class="form-control" placeholder="+27...">
+                </div>
+                <div class="col-md-4">
+                    <label for="platform" class="form-label">Platform</label>
+                    <select id="platform" class="form-select" required>
+                        <option value="GetYourGuide">GetYourGuide</option>
+                        <option value="Fomo">Fomo</option>
+                        <option value="Hyperli">Hyperli</option>
+                        <option value="Ontours">Ontours</option>
+                        <option value="Walk-in">Walk-in</option>
+                        <option value="Direct">Direct</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="accountName" class="form-label">Account</label>
+                    <input type="text" id="accountName" class="form-control" placeholder="GYG account 1">
+                </div>
+                <div class="col-md-4">
+                    <label for="productName" class="form-label">Product</label>
+                    <input type="text" id="productName" class="form-control" placeholder="Quadbike waterfall">
+                </div>
+                <div class="col-md-4">
+                    <label for="bookingDate" class="form-label">Date</label>
+                    <input type="date" id="bookingDate" class="form-control" value="${today}" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="startTime" class="form-label">Start time</label>
+                    <input type="time" id="startTime" class="form-control" value="11:00" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="durationMinutes" class="form-label">Duration</label>
+                    <select id="durationMinutes" class="form-select">
+                        <option value="60">1 hour</option>
+                        <option value="90">1.5 hours</option>
+                        <option value="120">2 hours</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="location" class="form-label">Location</label>
+                    <input type="text" id="location" class="form-control" placeholder="Grabouw">
+                </div>
+                <div class="col-md-4">
+                    <label for="paymentStatus" class="form-label">Payment</label>
+                    <select id="paymentStatus" class="form-select">
+                        <option value="Paid online">Paid online</option>
+                        <option value="Pay on arrival">Pay on arrival</option>
+                        <option value="Deposit paid">Deposit paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" min="0" step="0.01" id="amount" class="form-control" placeholder="2800">
+                </div>
+                <div class="col-md-6">
+                    <label for="notes" class="form-label">Notes</label>
+                    <input type="text" id="notes" class="form-control" placeholder="3 bikes, 2 buggy">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Recorded by</label>
+                    <div class="readonly-admin">${escapeHtml(adminName)}</div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-4">
+                <button type="button" id="submitBooking" class="btn btn-primary">Save Booking</button>
+                <span id="bookingFormStatus" class="text-muted"></span>
+            </div>
+        </div>
+    `);
+
+    document.getElementById('submitBooking')?.addEventListener('click', submitBooking);
+    document.getElementById('closePanel')?.addEventListener('click', closePanel);
+}
+
+async function submitBooking() {
+    const status = document.getElementById('bookingFormStatus');
+    const submitButton = document.getElementById('submitBooking');
+    const booking = {
+        customer_name: getValue('customerName'),
+        pax: Number(getValue('pax')),
+        phone: getValue('phone'),
+        platform: getValue('platform'),
+        account_name: getValue('accountName'),
+        product_name: getValue('productName'),
+        booking_date: getValue('bookingDate'),
+        start_time: getValue('startTime'),
+        duration_minutes: Number(getValue('durationMinutes')),
+        location: getValue('location'),
+        payment_status: getValue('paymentStatus'),
+        amount: getValue('amount'),
+        notes: getValue('notes'),
+        created_by: getAdminName(),
     };
 
-    fetch('/expenses', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newExpense)
-    })
-        .then(response => response.json())
-        .then(async () => {
-            alert('Expense added successfully!');
-            await updateDashboard()
-        })
-        .catch(error => console.error('Error adding new expense:', error));
-}
-function submitIncome() {
-    const incomeName = document.getElementById('incomeName').value;
-    const incomeAmount = document.getElementById('incomeAmount').value;
-    const incomeDate = document.getElementById('incomeDate').value;
-    const incomeNotes = document.getElementById('incomeNotes').value;
+    if (status) status.textContent = 'Saving...';
+    if (submitButton) submitButton.disabled = true;
 
+    try {
+        const response = await fetch('/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(booking),
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Could not save booking');
+        }
+
+        closePanel();
+        await loadBookings();
+        showMessage('Booking saved and added to the shared calendar.', 'success');
+    } catch (error) {
+        if (status) status.textContent = error.message;
+    } finally {
+        if (submitButton) submitButton.disabled = false;
+    }
+}
+
+function recordIncome() {
+    const adminName = getAdminName();
+    openPanel(`
+        <div class="booking-panel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="mb-0">Record Income</h3>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+            </div>
+            <label for="incomeName" class="form-label">Income name</label>
+            <input type="text" id="incomeName" class="form-control mb-3">
+            <label for="incomeAmount" class="form-label">Amount</label>
+            <input type="number" min="0" step="0.01" id="incomeAmount" class="form-control mb-3">
+            <label for="incomeDate" class="form-label">Date</label>
+            <input type="date" id="incomeDate" class="form-control mb-3" value="${toDateInputValue(new Date())}">
+            <label for="incomeNotes" class="form-label">Notes</label>
+            <input type="text" id="incomeNotes" class="form-control mb-3">
+            <label class="form-label">Recorded by</label>
+            <div class="readonly-admin mb-3">${escapeHtml(adminName)}</div>
+            <button type="button" id="submitIncome" class="btn btn-primary">Submit</button>
+        </div>
+    `);
+    document.getElementById('submitIncome')?.addEventListener('click', submitIncome);
+    document.getElementById('closePanel')?.addEventListener('click', closePanel);
+}
+
+async function submitIncome() {
     const newIncome = {
-        name: incomeName,
-        amount: parseFloat(incomeAmount),
-        date: incomeDate,
-        notes: incomeNotes,
+        name: getValue('incomeName'),
+        amount: parseFloat(getValue('incomeAmount')),
+        date: getValue('incomeDate'),
+        notes: getValue('incomeNotes'),
+        created_by: getAdminName(),
     };
 
-    fetch('incomes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newIncome)
-    })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            // Only parse JSON if there is a body
-            return response.status !== 204 ? response.json() : {};
-        })
-        .then(() => {
-            alert('Income added successfully!');
-            updateDashboard();
-        })
-        .catch(error => console.error('Error adding new income:', error));
+    try {
+        const response = await fetch('/incomes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newIncome),
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Could not save income');
+        }
+
+        closePanel();
+        await updateDashboard();
+        showMessage('Income added successfully.', 'success');
+    } catch (error) {
+        showMessage(error.message, 'danger');
+    }
 }
 
 function recordExpenses() {
-    const formHTML = `
-    <div class="form-popup">
-        <h3>Record Expense</h3>
-        <label for="expenseName">Expense Name:</label>
-        <input type="text" id="expenseName" class="form-input"><br>
-        
-        <label for="expenseAmount">Expense Amount:</label>
-        <input type="text" id="expenseAmount" class="form-input"><br>
-        
-        <label for="expenseDate">Date:</label>
-        <input type="date" id="expenseDate" class="form-input"><br>
-        
-        <label for="expenseNotes">Notes:</label>
-        <input type="text" id="expenseNotes" class="form-input"><br>
-        
-        <button type="button" id="submitExpense" class="btn">Submit</button>
-        <button type="button" id="closeExpenseForm" class="btn">Cancel</button>
-    </div>`;
-    showFormPopup(formHTML, 0.7); // you can tweak the scale value
+    const adminName = getAdminName();
+    openPanel(`
+        <div class="booking-panel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="mb-0">Record Expense</h3>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+            </div>
+            <label for="expenseName" class="form-label">Expense name</label>
+            <input type="text" id="expenseName" class="form-control mb-3" placeholder="Fuel bikes">
+            <label for="expenseAmount" class="form-label">Amount</label>
+            <input type="number" min="0" step="0.01" id="expenseAmount" class="form-control mb-3">
+            <label for="expenseDate" class="form-label">Date</label>
+            <input type="date" id="expenseDate" class="form-control mb-3" value="${toDateInputValue(new Date())}">
+            <label for="expenseNotes" class="form-label">Notes</label>
+            <input type="text" id="expenseNotes" class="form-control mb-3">
+            <label class="form-label">Recorded by</label>
+            <div class="readonly-admin mb-3">${escapeHtml(adminName)}</div>
+            <button type="button" id="submitExpense" class="btn btn-primary">Submit</button>
+        </div>
+    `);
+    document.getElementById('submitExpense')?.addEventListener('click', submitExpense);
+    document.getElementById('closePanel')?.addEventListener('click', closePanel);
+}
 
+async function submitExpense() {
+    const newExpense = {
+        name: getValue('expenseName'),
+        amount: parseFloat(getValue('expenseAmount')),
+        date: getValue('expenseDate'),
+        notes: getValue('expenseNotes'),
+        created_by: getAdminName(),
+    };
 
-    // Event listeners for close button
-    document.getElementById('closeExpenseForm').addEventListener('click', async () => {
-        const popup = document.querySelector('.form-popup');
-        if (popup && popup.parentNode) {
-            popup.parentNode.removeChild(popup); // remove from actual parent
-            await updateDashboard();
+    try {
+        const response = await fetch('/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newExpense),
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Could not save expense');
         }
-    });
 
-    document.getElementById('submitExpense').addEventListener('click', submitExpense);
+        closePanel();
+        await updateDashboard();
+        showMessage('Expense added successfully.', 'success');
+    } catch (error) {
+        showMessage(error.message, 'danger');
+    }
+}
+
+async function openSettings() {
+    if (platformCommissions.length === 0) {
+        await loadPlatformCommissions();
+    }
+
+    openPanel(`
+        <div class="booking-panel settings-panel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <p class="eyebrow mb-1">Settings</p>
+                    <h3 class="mb-0">Platform commissions</h3>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+            </div>
+            <div class="settings-list">
+                ${platformCommissions.map((commission) => `
+                    <label class="commission-row">
+                        <span>
+                            <strong>${escapeHtml(commission.platform_name)}</strong>
+                            <small>Deducted from gross booking amount</small>
+                        </span>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            class="commission-input"
+                            data-platform="${escapeHtml(commission.platform_name)}"
+                            value="${Number(commission.commission_rate).toFixed(2)}"
+                        >
+                        <em>%</em>
+                    </label>
+                `).join('')}
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-4">
+                <button type="button" id="saveCommissions" class="btn btn-primary">Save Settings</button>
+                <span id="settingsStatus" class="text-muted"></span>
+            </div>
+        </div>
+    `);
+
+    document.getElementById('closePanel')?.addEventListener('click', closePanel);
+    document.getElementById('saveCommissions')?.addEventListener('click', saveCommissions);
+}
+
+async function saveCommissions() {
+    const status = document.getElementById('settingsStatus');
+    const button = document.getElementById('saveCommissions');
+    const commissions = [...document.querySelectorAll('.commission-input')].map((input) => ({
+        platform_name: input.dataset.platform,
+        commission_rate: Number(input.value),
+    }));
+
+    if (status) status.textContent = 'Saving...';
+    if (button) button.disabled = true;
+
+    try {
+        const response = await fetch('/platform-commissions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                commissions,
+                created_by: getAdminName(),
+            }),
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Could not save settings');
+        }
+
+        platformCommissions = data.commissions;
+        closePanel();
+        await Promise.all([updateDashboard(), loadBookings()]);
+        showMessage('Commission settings updated.', 'success');
+    } catch (error) {
+        if (status) status.textContent = error.message;
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+
+function openPanel(html) {
+    const listContainer = document.getElementById('listContainer');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = `
+        <div class="panel-overlay">
+            ${html}
+        </div>
+    `;
+}
+
+function closePanel() {
+    const listContainer = document.getElementById('listContainer');
+    if (listContainer) {
+        listContainer.innerHTML = '';
+    }
+}
+
+function showMessage(message, type = 'info') {
+    const listContainer = document.getElementById('listContainer');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+            ${escapeHtml(message)}
+            <button type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+    `;
+    listContainer.querySelector('.btn-close')?.addEventListener('click', closePanel);
+}
+
+function getValue(id) {
+    return document.getElementById(id)?.value.trim() || '';
+}
+
+function getAdminName() {
+    return window.currentAdmin?.name || localStorage.getItem('currentAdminName') || 'Unknown admin';
+}
+
+function setMoneyText(id, value) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.textContent = Number(value || 0).toFixed(2);
+    }
+}
+
+function formatMoney(value) {
+    return `R${Number(value || 0).toFixed(2)}`;
+}
+
+function formatPercent(value) {
+    return `${Number(value || 0).toFixed(2)}%`;
+}
+
+function formatDate(value) {
+    if (!value) return '';
+
+    const date = new Date(`${value}T00:00:00`);
+    return date.toLocaleDateString('en-ZA', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
+}
+
+function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function getCalendarMonthRange(date) {
+    const monthStart = startOfMonth(date);
+    const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    const firstVisibleDay = new Date(monthStart);
+    const lastVisibleDay = new Date(monthEnd);
+
+    firstVisibleDay.setDate(monthStart.getDate() - monthStart.getDay());
+    lastVisibleDay.setDate(monthEnd.getDate() + (6 - monthEnd.getDay()));
+
+    return { firstVisibleDay, lastVisibleDay };
+}
+
+function compareBookingTimes(a, b) {
+    return String(a.start_time).localeCompare(String(b.start_time));
+}
+
+function normalisePlatformClass(platform) {
+    return String(platform || 'other')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'other';
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }

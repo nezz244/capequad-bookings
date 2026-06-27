@@ -24,6 +24,22 @@ onAuthStateChanged(auth, (user) => {
     if (!user && !isLoginPage) {
         // User is not logged in and not on login page → redirect
         window.location.href = "login.html";
+        return;
+    }
+
+    if (user) {
+        const adminName = user.displayName || user.email || 'Admin';
+        window.currentAdmin = {
+            name: adminName,
+            email: user.email || '',
+            uid: user.uid,
+        };
+        localStorage.setItem('currentAdminName', adminName);
+        const adminNameElement = document.getElementById('currentAdminName');
+        if (adminNameElement) {
+            adminNameElement.textContent = adminName;
+        }
+        window.dispatchEvent(new CustomEvent('admin-ready', { detail: window.currentAdmin }));
     }
 });
 

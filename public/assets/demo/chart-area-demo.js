@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch data for Income (Line Graph)
     const incomeResponse = await fetch('/chacco/incomes/data');
     const incomesData = await incomeResponse.json();
-    console.log("Income data:", incomesData);
     const months = incomesData.map(item => item.month);
     const totalIncome = incomesData.map(item => item.totalIncome);
 
@@ -21,14 +20,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           {
             label: 'Total Income',
             lineTension: 0.3,
-            backgroundColor: 'rgba(78, 115, 223, 0.05)',
-            borderColor: 'rgba(78, 115, 223, 1)',
+            backgroundColor: 'rgba(15, 118, 110, 0.08)',
+            borderColor: 'rgba(15, 118, 110, 1)',
             pointRadius: 3,
-            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-            pointBorderColor: 'rgba(78, 115, 223, 1)',
+            pointBackgroundColor: 'rgba(15, 118, 110, 1)',
+            pointBorderColor: 'rgba(15, 118, 110, 1)',
             pointHoverRadius: 3,
-            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
-            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHoverBackgroundColor: 'rgba(15, 118, 110, 1)',
+            pointHoverBorderColor: 'rgba(15, 118, 110, 1)',
             pointHitRadius: 10,
             pointBorderWidth: 2,
             data: totalIncome,
@@ -49,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ticks: {
               maxTicksLimit: 5,
               padding: 10,
-              callback: function(value) { return `$${value}`; }
+              callback: function(value) { return `R${value}`; }
             },
             gridLines: {
               color: 'rgb(234, 236, 244)',
