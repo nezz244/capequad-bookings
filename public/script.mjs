@@ -19,6 +19,7 @@ function attachListeners() {
     document.getElementById('bookingFrom')?.addEventListener('change', loadBookings);
     document.getElementById('bookingTo')?.addEventListener('change', loadBookings);
     document.getElementById('searchInput')?.addEventListener('input', renderBookings);
+    document.getElementById('calendarGrid')?.addEventListener('click', handleCalendarClick);
     document.getElementById('previousCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(-1));
     document.getElementById('todayCalendarMonth')?.addEventListener('click', () => {
         calendarCursor = startOfMonth(new Date());
@@ -250,13 +251,69 @@ function renderCalendarEvent(booking) {
     ].filter(Boolean).join(' | ');
 
     return `
-        <article class="calendar-event ${platformClass}" title="${escapeHtml(title)}">
+        <button class="calendar-event ${platformClass}" type="button" data-booking-id="${booking.id}" title="${escapeHtml(title)}">
             <div class="calendar-event-time">${escapeHtml(booking.start_time)}</div>
             <div class="calendar-event-main">
                 <strong>${escapeHtml(booking.customer_name)}</strong>
                 <span>${escapeHtml(booking.pax)}pax · ${escapeHtml(booking.platform)}</span>
             </div>
-        </article>
+        </button>
+    `;
+}
+
+function handleCalendarClick(event) {
+    const eventButton = event.target.closest('.calendar-event');
+
+    if (!eventButton) return;
+
+    const booking = cachedBookings.find((item) => String(item.id) === String(eventButton.dataset.bookingId));
+
+    if (booking) {
+        showBookingDetails(booking);
+    }
+}
+
+function showBookingDetails(booking) {
+    openPanel(`
+        <div class="booking-panel booking-details-panel">
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                <div>
+                    <p class="eyebrow mb-1">${escapeHtml(booking.platform || 'Booking')}</p>
+                    <h3 class="mb-1">${escapeHtml(booking.customer_name || 'Booking')}</h3>
+                    <div class="text-muted">${escapeHtml(formatDate(booking.booking_date))} · ${escapeHtml(booking.start_time)} · ${escapeHtml(String(booking.pax || 0))}pax</div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+            </div>
+
+            <div class="booking-detail-grid">
+                ${detailItem('Phone', booking.phone)}
+                ${detailItem('Platform', booking.platform)}
+                ${detailItem('Account', booking.account_name)}
+                ${detailItem('Product', booking.product_name)}
+                ${detailItem('Location', booking.location)}
+                ${detailItem('Payment', booking.payment_status)}
+                ${detailItem('Gross amount', formatMoney(booking.gross_amount))}
+                ${detailItem('Commission', `${formatMoney(booking.commission_amount)} (${formatPercent(booking.commission_rate)})`)}
+                ${detailItem('Net income', formatMoney(booking.net_amount))}
+                ${detailItem('Recorded by', booking.created_by)}
+            </div>
+
+            <div class="booking-detail-notes">
+                <span>Notes</span>
+                <p>${escapeHtml(booking.notes || 'No notes recorded.')}</p>
+            </div>
+        </div>
+    `);
+
+    document.getElementById('closePanel')?.addEventListener('click', closePanel);
+}
+
+function detailItem(label, value) {
+    return `
+        <div class="booking-detail-item">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value || '-')}</strong>
+        </div>
     `;
 }
 
