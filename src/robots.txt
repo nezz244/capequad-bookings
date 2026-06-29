@@ -5,4 +5,4 @@ Allow: /
 Disallow: /success
 Disallow: /failure
 
-Sitemap: https://app-capequad-bookings.web.app/sitemap.xml
+Sitemap: https://capeadrenaline.com/sitemap.xml

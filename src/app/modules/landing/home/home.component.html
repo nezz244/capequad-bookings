@@ -2,7 +2,7 @@
     <header
         class="sticky top-0 z-30 flex flex-none flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[#07110f]/85 px-4 py-4 shadow-lg shadow-black/20 backdrop-blur-md sm:px-6 md:px-8">
         <a
-            routerLink="bookings"
+            routerLink="/home"
             class="group inline-flex items-center gap-3 no-underline hover:no-underline hover:opacity-95">
             <span class="flex h-11 w-11 items-center justify-center rounded-full border border-emerald-300/40 bg-emerald-300/15 text-lg font-black text-emerald-200 shadow-sm shadow-emerald-950/40">
                 CA
@@ -16,9 +16,9 @@
             class="flex w-full gap-2 sm:w-auto sm:justify-end sm:gap-3"
             aria-label="Main">
             <a
-                routerLink="bookings"
+                routerLink="/home"
                 routerLinkActive="bg-emerald-400 text-[#07110f] shadow-sm"
-                [routerLinkActiveOptions]="{ exact: false }"
+                [routerLinkActiveOptions]="{ exact: true }"
                 class="rounded-full px-4 py-2 text-center text-sm font-semibold text-white no-underline ring-1 ring-white/15 transition-colors hover:bg-white/10 hover:no-underline">
                 Bookings
             </a>

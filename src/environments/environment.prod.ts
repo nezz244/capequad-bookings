@@ -1,7 +1,7 @@
 
 export const environment = {
     seo: {
-        siteUrl: 'https://app-capequad-bookings.web.app',
+        siteUrl: 'https://capeadrenaline.com',
         siteName: 'CapeAdrenaline',
         defaultTitle: 'CapeAdrenaline | Cape Town Quad Biking & Dune Buggy Tours',
         defaultDescription:

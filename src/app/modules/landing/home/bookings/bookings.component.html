@@ -1,27 +1,66 @@
 <div class="relative min-h-full w-full overflow-hidden bg-[#07110f]">
-    <div
-        class="absolute inset-0 bg-cover bg-center opacity-35"
-        style="background-image: url('assets/images/activities/quadbike-waterfall-cover-landscape.jpg');">
-    </div>
-    <div class="absolute inset-0 bg-gradient-to-b from-[#07110f]/75 via-[#07110f]/85 to-[#07110f]"></div>
+    <section class="relative flex min-h-[72vh] items-end overflow-hidden bg-[#07110f] px-5 pb-12 pt-28 sm:px-8 md:min-h-[78vh]">
+        <video
+            *ngIf="!heroVideoFailed"
+            class="absolute inset-0 h-full w-full object-cover"
+            [attr.poster]="heroFallbackImage"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            aria-hidden="true"
+            (error)="onHeroVideoError()">
+            <source [src]="heroVideoUrl" type="video/mp4">
+        </video>
 
-    <div class="relative px-5 pb-12 pt-8 sm:px-8">
-        <section class="mx-auto max-w-5xl text-center">
-            <div class="mx-auto mb-4 inline-flex rounded-full border border-emerald-200/25 bg-emerald-200/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-emerald-100">
+        <img
+            *ngIf="heroVideoFailed"
+            class="absolute inset-0 h-full w-full object-cover"
+            [src]="heroFallbackImage"
+            alt="">
+
+        <div class="absolute inset-0 bg-gradient-to-b from-[#07110f]/45 via-[#07110f]/45 to-[#07110f]"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#07110f]/80 via-[#07110f]/45 to-transparent"></div>
+
+        <div class="relative mx-auto flex w-full max-w-6xl flex-col items-start">
+            <div class="mb-4 inline-flex rounded-full border border-emerald-200/25 bg-emerald-200/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-emerald-100">
                 CapeAdrenaline
             </div>
 
-            <h1 class="text-3xl font-black leading-tight text-white sm:text-5xl md:text-6xl">
+            <h1 class="max-w-4xl text-4xl font-black leading-tight text-white sm:text-6xl md:text-7xl">
                 Cape Town Forest &amp; Dune Adventures
             </h1>
 
-            <p class="mx-auto mt-4 max-w-3xl text-sm leading-6 text-white/85 sm:text-lg">
+            <p class="mt-5 max-w-2xl text-base leading-7 text-white/90 sm:text-xl">
                 Guided quad biking and buggy adventures across Cape Town's forest trails, waterfall routes, and Atlantis Dunes. Choose your location, activity, and time slot.
             </p>
 
-            <div class="mt-4 text-sm font-medium text-emerald-100/90">
+            <div class="mt-5 text-sm font-semibold text-emerald-100/95 sm:text-base">
                 Forest and waterfall adventures in Grabouw. Sand-dune quad biking at Atlantis Dunes.
             </div>
+
+            <a
+                href="/home#activities"
+                class="mt-8 rounded-full bg-emerald-400 px-7 py-3 text-sm font-black uppercase tracking-wide text-[#07110f] no-underline shadow-xl shadow-black/30 transition hover:bg-emerald-300 hover:no-underline sm:text-base">
+                Book an activity
+            </a>
+        </div>
+    </section>
+
+    <div class="relative px-5 pb-12 pt-10 sm:px-8">
+        <section id="activities" class="mx-auto max-w-5xl scroll-mt-28 text-center">
+            <div class="mx-auto mb-4 inline-flex rounded-full border border-emerald-200/25 bg-emerald-200/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-emerald-100">
+                Book online
+            </div>
+
+            <h2 class="text-3xl font-black leading-tight text-white sm:text-5xl">
+                Choose your adventure
+            </h2>
+
+            <p class="mx-auto mt-4 max-w-3xl text-sm leading-6 text-white/85 sm:text-lg">
+                Select an available activity below and complete your booking directly.
+            </p>
         </section>
 
         <div class="mx-auto mt-8 max-w-4xl sm:mt-12">
@@ -30,7 +69,12 @@
             <div *ngFor="let activity of activities" class="shadow col-span-2 sm:col-span-1">
                 <div class="hover:-translate-y-1 transition-all duration-200 rounded-2xl bg-white min-h-100 shadow-2xl shadow-black/30">
 
-                    <img [src]="activity.imgUrl" class="h-60 w-full rounded-t-2xl object-cover">
+                    <div class="aspect-video w-full overflow-hidden rounded-t-2xl bg-[#07110f]">
+                        <img
+                            [src]="activity.imgUrl"
+                            class="h-full w-full object-contain"
+                            [alt]="activity.title">
+                    </div>
 
                     <div *ngIf="!activity.hideCardTitle" class="-mt-40 text-lg bg-purple-900 text-center text-white font-semibold rounded-md">
                     <span class="p-2 px-3 bg-dark rounded-full">

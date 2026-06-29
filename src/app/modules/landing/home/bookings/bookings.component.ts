@@ -12,6 +12,14 @@ export class BookingsComponent {
 
     constructor(private dialog: MatDialog) {}
 
+    readonly heroVideoUrl = 'assets/videos/capeadrenaline-hero.mp4';
+    readonly heroFallbackImage = 'assets/images/activities/quadbike-waterfall-cover-landscape.jpg';
+    heroVideoFailed = false;
+
+    onHeroVideoError(): void {
+        this.heroVideoFailed = true;
+    }
+
     activities = [
         {
             title: 'Quadbiking 1hr',

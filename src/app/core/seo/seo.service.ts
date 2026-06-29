@@ -19,7 +19,7 @@ export class SeoService {
 
     update(config: SeoConfig): void {
         const siteUrl = this._normalizeSiteUrl(this._seo.siteUrl);
-        const path = config.path ?? '/home/bookings';
+        const path = config.path ?? '/home';
         const canonicalUrl = `${siteUrl}${path.startsWith('/') ? path : `/${path}`}`;
         const imagePath = config.image ?? this._seo.defaultImage;
         const imageUrl = imagePath.startsWith('http') ? imagePath : `${siteUrl}/${imagePath.replace(/^\//, '')}`;
@@ -53,7 +53,7 @@ export class SeoService {
         this.update({
             title: this._seo.defaultTitle,
             description: this._seo.defaultDescription,
-            path: '/home/bookings'
+            path: '/home'
         });
     }
 
@@ -135,7 +135,7 @@ export class SeoService {
                             price: '1000',
                             priceCurrency: 'ZAR',
                             availability: 'https://schema.org/InStock',
-                            url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home/bookings`
+                            url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home`
                         },
                         {
                             '@type': 'Offer',
@@ -143,7 +143,7 @@ export class SeoService {
                             price: '1500',
                             priceCurrency: 'ZAR',
                             availability: 'https://schema.org/InStock',
-                            url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home/bookings`
+                            url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home`
                         }
                     ]
                 }
