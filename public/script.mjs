@@ -459,6 +459,7 @@ async function recordBooking(booking = null) {
                         <option value="Fomo" ${selectIf(selectedPlatform, 'Fomo')}>Fomo</option>
                         <option value="Hyperli" ${selectIf(selectedPlatform, 'Hyperli')}>Hyperli</option>
                         <option value="Viator" ${selectIf(selectedPlatform, 'Viator')}>Viator</option>
+                        <option value="Wikideals" ${selectIf(selectedPlatform, 'Wikideals')}>Wikideals</option>
                         <option value="Ontours" ${selectIf(selectedPlatform, 'Ontours')}>Ontours</option>
                         <option value="Walk-in" ${selectIf(selectedPlatform, 'Walk-in')}>Walk-in</option>
                         <option value="Direct" ${selectIf(selectedPlatform, 'Direct')}>Direct</option>
@@ -904,7 +905,7 @@ function addAccountSettingsRow() {
 
 function getPlatformNames() {
     const platforms = platformCommissions.map((commission) => commission.platform_name);
-    return platforms.length ? platforms : ['GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Ontours', 'Walk-in', 'Direct', 'Other'];
+    return platforms.length ? platforms : ['GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Wikideals', 'Ontours', 'Walk-in', 'Direct', 'Other'];
 }
 
 function openPanel(html) {
