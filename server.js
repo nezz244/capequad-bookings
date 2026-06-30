@@ -43,6 +43,7 @@ const defaultCommissions = [
     ['GetYourGuide', 34],
     ['Fomo', 25],
     ['Hyperli', 20],
+    ['Viator', 22],
     ['Ontours', 0],
     ['Walk-in', 0],
     ['Direct', 0],
@@ -322,7 +323,7 @@ app.get('/platform-commissions', async (req, res) => {
         const [rows] = await db.query(`
             SELECT platform_name, commission_rate, updated_by, updated_at
             FROM platform_commissions
-            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name
         `);
 
         res.json(rows);
@@ -359,7 +360,7 @@ app.put('/platform-commissions', async (req, res) => {
         const [rows] = await db.query(`
             SELECT platform_name, commission_rate, updated_by, updated_at
             FROM platform_commissions
-            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name
         `);
 
         res.json({ success: true, commissions: rows });
@@ -374,7 +375,7 @@ app.get('/platform-accounts', async (req, res) => {
         const [rows] = await db.query(`
             SELECT id, platform_name, account_name, commission_rate, is_active, updated_by, created_at, updated_at
             FROM platform_accounts
-            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name, account_name
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name, account_name
         `);
 
         res.json(rows);
@@ -420,7 +421,7 @@ app.put('/platform-accounts', async (req, res) => {
         const [rows] = await db.query(`
             SELECT id, platform_name, account_name, commission_rate, is_active, updated_by, created_at, updated_at
             FROM platform_accounts
-            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name, account_name
+            ORDER BY FIELD(platform_name, 'GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Ontours', 'Walk-in', 'Direct', 'Other'), platform_name, account_name
         `);
 
         res.json({ success: true, accounts: rows });

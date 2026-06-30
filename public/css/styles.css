@@ -11597,6 +11597,11 @@ body {
   background: #ede9fe;
 }
 
+.platform-viator {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
 .platform-ontours {
   border-color: #0369a1;
   background: #e0f2fe;
