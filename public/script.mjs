@@ -359,7 +359,6 @@ function recordBooking() {
                         <option value="GetYourGuide">GetYourGuide</option>
                         <option value="Fomo">Fomo</option>
                         <option value="Hyperli">Hyperli</option>
-                        <option value="Viator">Viator</option>
                         <option value="Ontours">Ontours</option>
                         <option value="Walk-in">Walk-in</option>
                         <option value="Direct">Direct</option>
@@ -796,7 +795,7 @@ function addAccountSettingsRow() {
 
 function getPlatformNames() {
     const platforms = platformCommissions.map((commission) => commission.platform_name);
-    return platforms.length ? platforms : ['GetYourGuide', 'Fomo', 'Hyperli', 'Viator', 'Ontours', 'Walk-in', 'Direct', 'Other'];
+    return platforms.length ? platforms : ['GetYourGuide', 'Fomo', 'Hyperli', 'Ontours', 'Walk-in', 'Direct', 'Other'];
 }
 
 function openPanel(html) {
