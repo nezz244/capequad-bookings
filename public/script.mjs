@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function attachListeners() {
-    document.getElementById('bookingButton')?.addEventListener('click', recordBooking);
-    document.getElementById('quickBookingButton')?.addEventListener('click', recordBooking);
+    document.getElementById('bookingButton')?.addEventListener('click', () => recordBooking());
+    document.getElementById('quickBookingButton')?.addEventListener('click', () => recordBooking());
     document.getElementById('expensesButton')?.addEventListener('click', recordExpenses);
     document.getElementById('incomeButton')?.addEventListener('click', recordIncome);
     document.getElementById('settingsButton')?.addEventListener('click', openSettings);
@@ -369,7 +369,10 @@ function showBookingDetails(booking) {
                     <h3 class="mb-1">${escapeHtml(booking.customer_name || 'Booking')}</h3>
                     <div class="text-muted">${escapeHtml(formatDate(booking.booking_date))} · ${escapeHtml(booking.start_time)} · ${escapeHtml(String(booking.pax || 0))}pax</div>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-primary btn-sm" id="editBooking">Edit</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
+                </div>
             </div>
 
             <div class="booking-detail-grid">
@@ -393,6 +396,7 @@ function showBookingDetails(booking) {
     `);
 
     document.getElementById('closePanel')?.addEventListener('click', closePanel);
+    document.getElementById('editBooking')?.addEventListener('click', () => recordBooking(booking));
 }
 
 function detailItem(label, value) {
@@ -418,39 +422,47 @@ function updateBookingStats() {
     }
 }
 
-function recordBooking() {
+async function recordBooking(booking = null) {
+    const isEditing = Boolean(booking?.id);
     const today = toDateInputValue(new Date());
     const adminName = getAdminName();
+    const selectedPlatform = booking?.platform || 'GetYourGuide';
+    const selectedDuration = String(booking?.duration_minutes || 60);
+    const selectedPayment = booking?.payment_status || 'Paid online';
+    const selectedAccount = booking?.account_name || '';
+
+    await loadPlatformAccounts();
+
     openPanel(`
         <div class="booking-panel">
             <div class="d-flex align-items-center justify-content-between mb-3">
-                <h3 class="mb-0">Record Booking</h3>
+                <h3 class="mb-0">${isEditing ? 'Edit Booking' : 'Record Booking'}</h3>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
             </div>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label for="customerName" class="form-label">Customer name</label>
-                    <input type="text" id="customerName" class="form-control" placeholder="Simone" required>
+                    <input type="text" id="customerName" class="form-control" placeholder="Simone" value="${escapeHtml(booking?.customer_name || '')}" required>
                 </div>
                 <div class="col-md-3">
                     <label for="pax" class="form-label">Pax</label>
-                    <input type="number" min="1" id="pax" class="form-control" value="2" required>
+                    <input type="number" min="1" id="pax" class="form-control" value="${escapeHtml(String(booking?.pax || 2))}" required>
                 </div>
                 <div class="col-md-3">
                     <label for="phone" class="form-label">Phone</label>
-                    <input type="tel" id="phone" class="form-control" placeholder="+27...">
+                    <input type="tel" id="phone" class="form-control" placeholder="+27..." value="${escapeHtml(booking?.phone || '')}">
                 </div>
                 <div class="col-md-4">
                     <label for="platform" class="form-label">Platform</label>
                     <select id="platform" class="form-select" required>
-                        <option value="GetYourGuide">GetYourGuide</option>
-                        <option value="Fomo">Fomo</option>
-                        <option value="Hyperli">Hyperli</option>
-                        <option value="Viator">Viator</option>
-                        <option value="Ontours">Ontours</option>
-                        <option value="Walk-in">Walk-in</option>
-                        <option value="Direct">Direct</option>
-                        <option value="Other">Other</option>
+                        <option value="GetYourGuide" ${selectIf(selectedPlatform, 'GetYourGuide')}>GetYourGuide</option>
+                        <option value="Fomo" ${selectIf(selectedPlatform, 'Fomo')}>Fomo</option>
+                        <option value="Hyperli" ${selectIf(selectedPlatform, 'Hyperli')}>Hyperli</option>
+                        <option value="Viator" ${selectIf(selectedPlatform, 'Viator')}>Viator</option>
+                        <option value="Ontours" ${selectIf(selectedPlatform, 'Ontours')}>Ontours</option>
+                        <option value="Walk-in" ${selectIf(selectedPlatform, 'Walk-in')}>Walk-in</option>
+                        <option value="Direct" ${selectIf(selectedPlatform, 'Direct')}>Direct</option>
+                        <option value="Other" ${selectIf(selectedPlatform, 'Other')}>Other</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -463,44 +475,44 @@ function recordBooking() {
                 </div>
                 <div class="col-md-4">
                     <label for="productName" class="form-label">Product</label>
-                    <input type="text" id="productName" class="form-control" placeholder="Quadbike waterfall">
+                    <input type="text" id="productName" class="form-control" placeholder="Quadbike waterfall" value="${escapeHtml(booking?.product_name || '')}">
                 </div>
                 <div class="col-md-4">
                     <label for="bookingDate" class="form-label">Date</label>
-                    <input type="date" id="bookingDate" class="form-control" value="${today}" required>
+                    <input type="date" id="bookingDate" class="form-control" value="${escapeHtml(booking?.booking_date || today)}" required>
                 </div>
                 <div class="col-md-4">
                     <label for="startTime" class="form-label">Start time</label>
-                    <input type="time" id="startTime" class="form-control" value="11:00" required>
+                    <input type="time" id="startTime" class="form-control" value="${escapeHtml(booking?.start_time || '11:00')}" required>
                 </div>
                 <div class="col-md-4">
                     <label for="durationMinutes" class="form-label">Duration</label>
                     <select id="durationMinutes" class="form-select">
-                        <option value="60">1 hour</option>
-                        <option value="90">1.5 hours</option>
-                        <option value="120">2 hours</option>
+                        <option value="60" ${selectIf(selectedDuration, '60')}>1 hour</option>
+                        <option value="90" ${selectIf(selectedDuration, '90')}>1.5 hours</option>
+                        <option value="120" ${selectIf(selectedDuration, '120')}>2 hours</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label for="location" class="form-label">Location</label>
-                    <input type="text" id="location" class="form-control" placeholder="Grabouw">
+                    <input type="text" id="location" class="form-control" placeholder="Grabouw" value="${escapeHtml(booking?.location || '')}">
                 </div>
                 <div class="col-md-4">
                     <label for="paymentStatus" class="form-label">Payment</label>
                     <select id="paymentStatus" class="form-select">
-                        <option value="Paid online">Paid online</option>
-                        <option value="Pay on arrival">Pay on arrival</option>
-                        <option value="Deposit paid">Deposit paid</option>
-                        <option value="Unpaid">Unpaid</option>
+                        <option value="Paid online" ${selectIf(selectedPayment, 'Paid online')}>Paid online</option>
+                        <option value="Pay on arrival" ${selectIf(selectedPayment, 'Pay on arrival')}>Pay on arrival</option>
+                        <option value="Deposit paid" ${selectIf(selectedPayment, 'Deposit paid')}>Deposit paid</option>
+                        <option value="Unpaid" ${selectIf(selectedPayment, 'Unpaid')}>Unpaid</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label for="amount" class="form-label">Amount</label>
-                    <input type="number" min="0" step="0.01" id="amount" class="form-control" placeholder="2800">
+                    <input type="number" min="0" step="0.01" id="amount" class="form-control" placeholder="2800" value="${escapeHtml(booking?.amount ?? '')}">
                 </div>
                 <div class="col-md-6">
                     <label for="notes" class="form-label">Notes</label>
-                    <input type="text" id="notes" class="form-control" placeholder="3 bikes, 2 buggy">
+                    <input type="text" id="notes" class="form-control" placeholder="3 bikes, 2 buggy" value="${escapeHtml(booking?.notes || '')}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Recorded by</label>
@@ -508,7 +520,7 @@ function recordBooking() {
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2 mt-4">
-                <button type="button" id="submitBooking" class="btn btn-primary">Save Booking</button>
+                <button type="button" id="submitBooking" class="btn btn-primary" data-booking-id="${escapeHtml(booking?.id || '')}">${isEditing ? 'Update Booking' : 'Save Booking'}</button>
                 <span id="bookingFormStatus" class="text-muted"></span>
             </div>
         </div>
@@ -516,14 +528,16 @@ function recordBooking() {
 
     document.getElementById('submitBooking')?.addEventListener('click', submitBooking);
     document.getElementById('closePanel')?.addEventListener('click', closePanel);
-    document.getElementById('platform')?.addEventListener('change', updateAccountOptions);
+    document.getElementById('platform')?.addEventListener('change', () => updateAccountOptions());
     document.getElementById('accountName')?.addEventListener('change', toggleCustomAccount);
-    updateAccountOptions();
+    updateAccountOptions(selectedAccount);
 }
 
 async function submitBooking() {
     const status = document.getElementById('bookingFormStatus');
     const submitButton = document.getElementById('submitBooking');
+    const bookingId = submitButton?.dataset.bookingId;
+    const isEditing = Boolean(bookingId);
     const booking = {
         customer_name: getValue('customerName'),
         pax: Number(getValue('pax')),
@@ -541,12 +555,12 @@ async function submitBooking() {
         created_by: getAdminName(),
     };
 
-    if (status) status.textContent = 'Saving...';
+    if (status) status.textContent = isEditing ? 'Updating...' : 'Saving...';
     if (submitButton) submitButton.disabled = true;
 
     try {
-        const response = await fetch('/bookings', {
-            method: 'POST',
+        const response = await fetch(isEditing ? `/bookings/${encodeURIComponent(bookingId)}` : '/bookings', {
+            method: isEditing ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(booking),
         });
@@ -557,8 +571,12 @@ async function submitBooking() {
         }
 
         closePanel();
-        await loadBookings();
-        showMessage('Booking saved and added to the shared calendar.', 'success');
+        if (isEditing && booking.booking_date) {
+            calendarCursor = startOfMonth(new Date(`${booking.booking_date}T00:00:00`));
+            setCalendarRangeInputs();
+        }
+        await Promise.all([loadBookings(), updateDashboard(), loadConsolidation(), loadPlatformAccounts()]);
+        showMessage(isEditing ? 'Booking updated.' : 'Booking saved and added to the shared calendar.', 'success');
     } catch (error) {
         if (status) status.textContent = error.message;
     } finally {
@@ -802,15 +820,18 @@ async function saveCommissions() {
     }
 }
 
-function updateAccountOptions() {
+function updateAccountOptions(selectedAccount = '') {
     const platform = getValue('platform');
     const accountSelect = document.getElementById('accountName');
     if (!accountSelect) return;
 
     const accounts = platformAccounts.filter((account) => account.platform_name === platform && Number(account.is_active) === 1);
+    const selectedAccountName = String(selectedAccount || '').trim();
+    const selectedAccountExists = accounts.some((account) => account.account_name === selectedAccountName);
     accountSelect.innerHTML = `
         <option value="">No account</option>
-        ${accounts.map((account) => `<option value="${escapeHtml(account.account_name)}">${escapeHtml(account.account_name)}</option>`).join('')}
+        ${accounts.map((account) => `<option value="${escapeHtml(account.account_name)}" ${selectIf(selectedAccountName, account.account_name)}>${escapeHtml(account.account_name)}</option>`).join('')}
+        ${selectedAccountName && !selectedAccountExists ? `<option value="${escapeHtml(selectedAccountName)}" selected>${escapeHtml(selectedAccountName)}</option>` : ''}
         <option value="__custom__">Add new account...</option>
     `;
     toggleCustomAccount();
@@ -989,6 +1010,10 @@ function getCalendarMonthRange(date) {
 
 function compareBookingTimes(a, b) {
     return String(a.start_time).localeCompare(String(b.start_time));
+}
+
+function selectIf(value, expected) {
+    return String(value || '') === String(expected || '') ? 'selected' : '';
 }
 
 function normalisePlatformClass(platform) {

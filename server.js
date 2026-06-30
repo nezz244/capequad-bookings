@@ -141,8 +141,74 @@ ensureTables().catch((error) => {
 const isValidString = (str) => typeof str === 'string' && str.trim().length > 0;
 const isValidNumber = (num) => typeof num === 'number' && num > 0;
 const isValidDate = (date) => !isNaN(Date.parse(date));
-const normaliseBlank = (value) => typeof value === 'string' && value.trim() === '' ? null : value;
+const normaliseBlank = (value) => {
+    if (typeof value !== 'string') return value;
+
+    const trimmed = value.trim();
+    return trimmed === '' ? null : trimmed;
+};
 const getCreatedBy = (body) => normaliseBlank(body.created_by) || normaliseBlank(body.admin_name) || 'Unknown admin';
+
+function buildBookingFromBody(body) {
+    return {
+        customer_name: normaliseBlank(body.customer_name),
+        pax: Number(body.pax),
+        phone: normaliseBlank(body.phone),
+        platform: normaliseBlank(body.platform),
+        account_name: normaliseBlank(body.account_name),
+        product_name: normaliseBlank(body.product_name),
+        booking_date: body.booking_date,
+        start_time: body.start_time,
+        duration_minutes: Number(body.duration_minutes) || 60,
+        location: normaliseBlank(body.location),
+        payment_status: normaliseBlank(body.payment_status),
+        amount: body.amount === '' || body.amount == null ? null : Number(body.amount),
+        notes: normaliseBlank(body.notes),
+        created_by: getCreatedBy(body),
+    };
+}
+
+function validateBookingPayload(booking) {
+    if (!isValidString(booking.customer_name)) {
+        return 'Customer name is required.';
+    }
+
+    if (!Number.isInteger(booking.pax) || booking.pax < 1) {
+        return 'Pax must be a positive whole number.';
+    }
+
+    if (!isValidString(booking.platform)) {
+        return 'Platform is required.';
+    }
+
+    if (!isValidDate(booking.booking_date)) {
+        return 'Booking date is required.';
+    }
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(booking.start_time)) {
+        return 'Start time must use HH:MM format.';
+    }
+
+    if (!Number.isInteger(booking.duration_minutes) || booking.duration_minutes < 15) {
+        return 'Duration must be at least 15 minutes.';
+    }
+
+    if (booking.amount !== null && (Number.isNaN(booking.amount) || booking.amount < 0)) {
+        return 'Amount must be zero or more.';
+    }
+
+    return null;
+}
+
+async function upsertPlatformAccountForBooking(booking) {
+    if (!booking.account_name) return;
+
+    await db.query(`
+        INSERT INTO platform_accounts (platform_name, account_name, updated_by)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE account_name = VALUES(account_name)
+    `, [booking.platform, booking.account_name, booking.created_by]);
+}
 
 function bookingIncomeSelect(whereClause = '') {
     return `
@@ -647,49 +713,11 @@ app.get('/bookings', async (req, res) => {
 });
 
 app.post('/bookings', async (req, res) => {
-    const booking = {
-        customer_name: normaliseBlank(req.body.customer_name),
-        pax: Number(req.body.pax),
-        phone: normaliseBlank(req.body.phone),
-        platform: normaliseBlank(req.body.platform),
-        account_name: normaliseBlank(req.body.account_name),
-        product_name: normaliseBlank(req.body.product_name),
-        booking_date: req.body.booking_date,
-        start_time: req.body.start_time,
-        duration_minutes: Number(req.body.duration_minutes) || 60,
-        location: normaliseBlank(req.body.location),
-        payment_status: normaliseBlank(req.body.payment_status),
-        amount: req.body.amount === '' || req.body.amount == null ? null : Number(req.body.amount),
-        notes: normaliseBlank(req.body.notes),
-        created_by: getCreatedBy(req.body),
-    };
+    const booking = buildBookingFromBody(req.body);
+    const validationError = validateBookingPayload(booking);
 
-    if (!isValidString(booking.customer_name)) {
-        return res.status(400).json({ error: 'Customer name is required.' });
-    }
-
-    if (!Number.isInteger(booking.pax) || booking.pax < 1) {
-        return res.status(400).json({ error: 'Pax must be a positive whole number.' });
-    }
-
-    if (!isValidString(booking.platform)) {
-        return res.status(400).json({ error: 'Platform is required.' });
-    }
-
-    if (!isValidDate(booking.booking_date)) {
-        return res.status(400).json({ error: 'Booking date is required.' });
-    }
-
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(booking.start_time)) {
-        return res.status(400).json({ error: 'Start time must use HH:MM format.' });
-    }
-
-    if (!Number.isInteger(booking.duration_minutes) || booking.duration_minutes < 15) {
-        return res.status(400).json({ error: 'Duration must be at least 15 minutes.' });
-    }
-
-    if (booking.amount !== null && (Number.isNaN(booking.amount) || booking.amount < 0)) {
-        return res.status(400).json({ error: 'Amount must be zero or more.' });
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
     }
 
     try {
@@ -728,13 +756,7 @@ app.post('/bookings', async (req, res) => {
             booking.created_by,
         ]);
 
-        if (booking.account_name) {
-            await db.query(`
-                INSERT INTO platform_accounts (platform_name, account_name, updated_by)
-                VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE account_name = VALUES(account_name)
-            `, [booking.platform, booking.account_name, booking.created_by]);
-        }
+        await upsertPlatformAccountForBooking(booking);
 
         res.status(201).json({
             success: true,
@@ -747,6 +769,75 @@ app.post('/bookings', async (req, res) => {
     } catch (error) {
         console.error('Error creating booking:', error);
         res.status(500).json({ error: 'Failed to create booking' });
+    }
+});
+
+app.put('/bookings/:id', async (req, res) => {
+    const bookingId = Number(req.params.id);
+    const booking = buildBookingFromBody(req.body);
+    const validationError = validateBookingPayload(booking);
+
+    if (!Number.isInteger(bookingId) || bookingId < 1) {
+        return res.status(400).json({ error: 'A valid booking id is required.' });
+    }
+
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
+    }
+
+    try {
+        const [result] = await db.query(`
+            UPDATE bookings
+            SET
+                customer_name = ?,
+                pax = ?,
+                phone = ?,
+                platform = ?,
+                account_name = ?,
+                product_name = ?,
+                booking_date = ?,
+                start_time = ?,
+                duration_minutes = ?,
+                location = ?,
+                payment_status = ?,
+                amount = ?,
+                notes = ?,
+                created_by = ?
+            WHERE id = ?
+        `, [
+            booking.customer_name,
+            booking.pax,
+            booking.phone,
+            booking.platform,
+            booking.account_name,
+            booking.product_name,
+            booking.booking_date,
+            booking.start_time,
+            booking.duration_minutes,
+            booking.location,
+            booking.payment_status,
+            booking.amount,
+            booking.notes,
+            booking.created_by,
+            bookingId,
+        ]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Booking not found.' });
+        }
+
+        await upsertPlatformAccountForBooking(booking);
+
+        res.json({
+            success: true,
+            booking: {
+                id: bookingId,
+                ...booking,
+            },
+        });
+    } catch (error) {
+        console.error('Error updating booking:', error);
+        res.status(500).json({ error: 'Failed to update booking' });
     }
 });
 
