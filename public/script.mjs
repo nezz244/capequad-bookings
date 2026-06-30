@@ -5,8 +5,9 @@ let platformAccounts = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     setDefaultBookingFilters();
+    setDefaultConsolidationRange();
     attachListeners();
-    await Promise.all([updateDashboard(), loadBookings(), loadPlatformCommissions(), loadPlatformAccounts()]);
+    await Promise.all([updateDashboard(), loadBookings(), loadPlatformCommissions(), loadPlatformAccounts(), loadConsolidation()]);
 });
 
 function attachListeners() {
@@ -15,6 +16,10 @@ function attachListeners() {
     document.getElementById('expensesButton')?.addEventListener('click', recordExpenses);
     document.getElementById('incomeButton')?.addEventListener('click', recordIncome);
     document.getElementById('settingsButton')?.addEventListener('click', openSettings);
+    document.getElementById('consolidationButton')?.addEventListener('click', () => {
+        document.getElementById('consolidationSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('runConsolidation')?.addEventListener('click', loadConsolidation);
     document.getElementById('refreshBookings')?.addEventListener('click', loadBookings);
     document.getElementById('bookingFrom')?.addEventListener('change', loadBookings);
     document.getElementById('bookingTo')?.addEventListener('change', loadBookings);
@@ -49,6 +54,20 @@ function setCalendarRangeInputs() {
     if (toInput) toInput.value = toDateInputValue(range.lastVisibleDay);
 }
 
+function setDefaultConsolidationRange() {
+    const fromInput = document.getElementById('consolidationFrom');
+    const toInput = document.getElementById('consolidationTo');
+    const today = new Date();
+
+    if (fromInput && !fromInput.value) {
+        fromInput.value = toDateInputValue(new Date(today.getFullYear(), 0, 1));
+    }
+
+    if (toInput && !toInput.value) {
+        toInput.value = toDateInputValue(today);
+    }
+}
+
 function changeCalendarMonth(offset) {
     calendarCursor = startOfMonth(new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + offset, 1));
     setCalendarRangeInputs();
@@ -74,6 +93,74 @@ async function updateDashboard() {
     } catch (error) {
         console.error('Error updating dashboard:', error);
     }
+}
+
+async function loadConsolidation() {
+    const from = document.getElementById('consolidationFrom')?.value;
+    const to = document.getElementById('consolidationTo')?.value;
+
+    if (!from || !to) {
+        showMessage('Choose a from and to date for the consolidation report.', 'warning');
+        return;
+    }
+
+    if (new Date(`${from}T00:00:00`) > new Date(`${to}T00:00:00`)) {
+        showMessage('The consolidation from date must be before the to date.', 'warning');
+        return;
+    }
+
+    try {
+        const params = new URLSearchParams({ from, to });
+        const response = await fetch(`/finance/consolidation?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error('Could not load consolidation report');
+        }
+
+        renderConsolidation(await response.json());
+    } catch (error) {
+        console.error('Error loading consolidation:', error);
+        showMessage('Could not load the consolidation report.', 'danger');
+    }
+}
+
+function renderConsolidation(report) {
+    const tbody = document.querySelector('#consolidationTable tbody');
+    const rows = report.rows || [];
+    const totals = report.totals || {};
+
+    setText('consolidationTotalIncome', formatMoney(totals.total_income));
+    setText('consolidationTotalCommission', formatMoney(totals.booking_commission));
+    setText('consolidationTotalExpenses', formatMoney(totals.expenses));
+    setText('consolidationTotalBalance', formatMoney(totals.balance));
+
+    document.getElementById('consolidationTotalBalance')?.classList.toggle('money-negative', Number(totals.balance || 0) < 0);
+
+    if (!tbody) return;
+
+    if (rows.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-4">No booking, income, or expense records found in this range.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = rows.map((row) => `
+        <tr>
+            <td><strong>${escapeHtml(formatMonthLabel(row.month))}</strong></td>
+            <td>${escapeHtml(String(row.booking_count || 0))}</td>
+            <td>${escapeHtml(String(row.pax || 0))}</td>
+            <td>${formatMoney(row.booking_gross_income)}</td>
+            <td>${formatMoney(row.booking_commission)}</td>
+            <td><strong>${formatMoney(row.booking_net_income)}</strong></td>
+            <td>${formatMoney(row.manual_income)}</td>
+            <td><strong>${formatMoney(row.total_income)}</strong></td>
+            <td>${formatMoney(row.expenses)}</td>
+            <td class="${Number(row.balance || 0) < 0 ? 'money-negative' : 'money-positive'}"><strong>${formatMoney(row.balance)}</strong></td>
+        </tr>
+    `).join('');
 }
 
 async function loadPlatformCommissions() {
@@ -846,6 +933,14 @@ function setMoneyText(id, value) {
     }
 }
 
+function setText(id, value) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
+
 function formatMoney(value) {
     return `R${Number(value || 0).toFixed(2)}`;
 }
@@ -862,6 +957,16 @@ function formatDate(value) {
         weekday: 'short',
         day: '2-digit',
         month: 'short',
+        year: 'numeric',
+    });
+}
+
+function formatMonthLabel(value) {
+    if (!value) return '';
+
+    const date = new Date(`${value}-01T00:00:00`);
+    return date.toLocaleDateString('en-ZA', {
+        month: 'long',
         year: 'numeric',
     });
 }

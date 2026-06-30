@@ -12252,6 +12252,57 @@ body.ops-page {
   margin-bottom: 12px;
 }
 
+.consolidation-surface {
+  margin-top: 22px;
+}
+
+.consolidation-controls {
+  justify-content: flex-end;
+}
+
+.consolidation-total-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.consolidation-total-grid article {
+  padding: 14px;
+  border: 1px solid var(--ca-line);
+  border-radius: var(--ca-radius);
+  background: #f8fafc;
+}
+
+.consolidation-total-grid span {
+  display: block;
+  color: var(--ca-muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.consolidation-total-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ca-ink);
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.consolidation-table th,
+.consolidation-table td {
+  white-space: nowrap;
+}
+
+.money-positive {
+  color: #047857;
+}
+
+.money-negative {
+  color: #b91c1c !important;
+}
+
 .dataTables_wrapper .dataTables_filter input,
 .dataTables_wrapper .dataTables_length select {
   border: 1px solid var(--ca-line);
@@ -12552,6 +12603,10 @@ body.ops-page {
 
   .date-range input {
     width: 100%;
+  }
+
+  .consolidation-total-grid {
+    grid-template-columns: 1fr;
   }
 
   .commission-row {

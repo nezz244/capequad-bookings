@@ -149,6 +149,7 @@ function bookingIncomeSelect(whereClause = '') {
         SELECT
             b.id,
             b.customer_name,
+            b.pax,
             b.platform,
             b.account_name,
             b.product_name,
@@ -459,6 +460,123 @@ app.get('/finance/summary', async (req, res) => {
     } catch (error) {
         console.error('Error fetching finance summary:', error);
         res.status(500).json({ error: 'Failed to fetch finance summary' });
+    }
+});
+
+app.get('/finance/consolidation', async (req, res) => {
+    const { from, to } = req.query;
+
+    if (!from || !to || !isValidDate(from) || !isValidDate(to)) {
+        return res.status(400).json({ error: 'Valid from and to dates are required.' });
+    }
+
+    if (new Date(from) > new Date(to)) {
+        return res.status(400).json({ error: 'From date must be before the to date.' });
+    }
+
+    try {
+        const [bookingRows] = await db.query(`
+            SELECT
+                DATE_FORMAT(booking_date, '%Y-%m') AS month,
+                COUNT(*) AS booking_count,
+                COALESCE(SUM(pax), 0) AS pax,
+                COALESCE(SUM(gross_amount), 0) AS booking_gross_income,
+                COALESCE(SUM(commission_amount), 0) AS booking_commission,
+                COALESCE(SUM(net_amount), 0) AS booking_net_income
+            FROM (${bookingIncomeSelect('WHERE b.booking_date BETWEEN ? AND ?')}) booking_income
+            GROUP BY DATE_FORMAT(booking_date, '%Y-%m')
+        `, [from, to]);
+
+        const [incomeRows] = await db.query(`
+            SELECT
+                DATE_FORMAT(date, '%Y-%m') AS month,
+                COALESCE(SUM(amount), 0) AS manual_income
+            FROM incomes
+            WHERE date BETWEEN ? AND ?
+            GROUP BY DATE_FORMAT(date, '%Y-%m')
+        `, [from, to]);
+
+        const [expenseRows] = await db.query(`
+            SELECT
+                DATE_FORMAT(expense_date, '%Y-%m') AS month,
+                COALESCE(SUM(amount), 0) AS expenses
+            FROM expenses
+            WHERE expense_date BETWEEN ? AND ?
+            GROUP BY DATE_FORMAT(expense_date, '%Y-%m')
+        `, [from, to]);
+
+        const months = new Map();
+        const makeMonth = (month) => ({
+            month,
+            booking_count: 0,
+            pax: 0,
+            booking_gross_income: 0,
+            booking_commission: 0,
+            booking_net_income: 0,
+            manual_income: 0,
+            total_income: 0,
+            expenses: 0,
+            balance: 0,
+        });
+        const ensureMonth = (month) => {
+            if (!months.has(month)) {
+                months.set(month, makeMonth(month));
+            }
+
+            return months.get(month);
+        };
+
+        bookingRows.forEach((row) => {
+            const month = ensureMonth(row.month);
+            month.booking_count = Number(row.booking_count) || 0;
+            month.pax = Number(row.pax) || 0;
+            month.booking_gross_income = Number(row.booking_gross_income) || 0;
+            month.booking_commission = Number(row.booking_commission) || 0;
+            month.booking_net_income = Number(row.booking_net_income) || 0;
+        });
+
+        incomeRows.forEach((row) => {
+            ensureMonth(row.month).manual_income = Number(row.manual_income) || 0;
+        });
+
+        expenseRows.forEach((row) => {
+            ensureMonth(row.month).expenses = Number(row.expenses) || 0;
+        });
+
+        const rows = Array.from(months.values())
+            .sort((a, b) => a.month.localeCompare(b.month))
+            .map((month) => {
+                month.total_income = month.booking_net_income + month.manual_income;
+                month.balance = month.total_income - month.expenses;
+                return month;
+            });
+
+        const totals = rows.reduce((summary, row) => ({
+            booking_count: summary.booking_count + row.booking_count,
+            pax: summary.pax + row.pax,
+            booking_gross_income: summary.booking_gross_income + row.booking_gross_income,
+            booking_commission: summary.booking_commission + row.booking_commission,
+            booking_net_income: summary.booking_net_income + row.booking_net_income,
+            manual_income: summary.manual_income + row.manual_income,
+            total_income: summary.total_income + row.total_income,
+            expenses: summary.expenses + row.expenses,
+            balance: summary.balance + row.balance,
+        }), {
+            booking_count: 0,
+            pax: 0,
+            booking_gross_income: 0,
+            booking_commission: 0,
+            booking_net_income: 0,
+            manual_income: 0,
+            total_income: 0,
+            expenses: 0,
+            balance: 0,
+        });
+
+        res.json({ from, to, rows, totals });
+    } catch (error) {
+        console.error('Error fetching finance consolidation:', error);
+        res.status(500).json({ error: 'Failed to fetch finance consolidation' });
     }
 });
 
