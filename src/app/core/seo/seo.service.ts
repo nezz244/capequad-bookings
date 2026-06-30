@@ -127,12 +127,12 @@ export class SeoService {
                         latitude: -34.1516,
                         longitude: 19.0153
                     },
-                    priceRange: 'R1000-R1500',
+                    priceRange: 'R599-R1500',
                     makesOffer: [
                         {
                             '@type': 'Offer',
                             name: 'Quad biking 1 hour with waterfall stop',
-                            price: '1000',
+                            price: '599',
                             priceCurrency: 'ZAR',
                             availability: 'https://schema.org/InStock',
                             url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home`

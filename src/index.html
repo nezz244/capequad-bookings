@@ -13,7 +13,7 @@
         <title>CapeAdrenaline | Cape Town Quad Biking &amp; Dune Buggy Tours</title>
 
         <meta charset="utf-8">
-        <meta name="description" content="Book Cape Town quad biking and dune buggy adventures with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw — CapeAdrenaline.">
+        <meta name="description" content="Book Cape Town quad biking from R599 and dune buggy adventures from R1500 with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw — CapeAdrenaline.">
         <meta name="keywords" content="Cape Town quad biking, dune buggy Cape Town, Grabouw adventure, waterfall tour, Trails End Hotel, CapeAdrenaline, Western Cape tours">
         <meta name="author" content="CapeAdrenaline">
         <meta name="robots" content="index, follow">
@@ -26,15 +26,72 @@
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="CapeAdrenaline">
         <meta property="og:title" content="CapeAdrenaline | Cape Town Quad Biking &amp; Dune Buggy Tours">
-        <meta property="og:description" content="Book Cape Town quad biking and dune buggy adventures with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw.">
+        <meta property="og:description" content="Book Cape Town quad biking from R599 and dune buggy adventures from R1500 with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw.">
         <meta property="og:url" content="https://capeadrenaline.com/home">
         <meta property="og:image" content="https://capeadrenaline.com/assets/images/activities/buggy7.png">
         <meta property="og:locale" content="en_ZA">
 
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="CapeAdrenaline | Cape Town Quad Biking &amp; Dune Buggy Tours">
-        <meta name="twitter:description" content="Book Cape Town quad biking and dune buggy adventures with a scenic waterfall stop.">
+        <meta name="twitter:description" content="Book Cape Town quad biking from R599 and dune buggy adventures from R1500 with a scenic waterfall stop.">
         <meta name="twitter:image" content="https://capeadrenaline.com/assets/images/activities/buggy7.png">
+        <script id="capeadrenaline-jsonld" type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebSite",
+                    "@id": "https://capeadrenaline.com/home#website",
+                    "url": "https://capeadrenaline.com",
+                    "name": "CapeAdrenaline",
+                    "description": "Book Cape Town quad biking from R599 and dune buggy adventures from R1500 with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw — CapeAdrenaline.",
+                    "inLanguage": "en-ZA",
+                    "publisher": { "@id": "https://capeadrenaline.com/home#organization" }
+                },
+                {
+                    "@type": "TouristAttraction",
+                    "@id": "https://capeadrenaline.com/home#organization",
+                    "name": "CapeAdrenaline",
+                    "description": "Guided quad biking and buggy adventures across Cape Town's forest trails, waterfall routes, and Atlantis Dunes.",
+                    "url": "https://capeadrenaline.com/home",
+                    "image": "https://capeadrenaline.com/assets/images/activities/buggy7.png",
+                    "email": "info@capeadrenaline.com",
+                    "telephone": "+27605954968",
+                    "address": {
+                        "@type": "PostalAddress",
+                        "streetAddress": "Trails End Hotel",
+                        "addressLocality": "Grabouw",
+                        "addressRegion": "Western Cape",
+                        "addressCountry": "ZA"
+                    },
+                    "geo": {
+                        "@type": "GeoCoordinates",
+                        "latitude": -34.1516,
+                        "longitude": 19.0153
+                    },
+                    "priceRange": "R599-R1500",
+                    "makesOffer": [
+                        {
+                            "@type": "Offer",
+                            "name": "Quad biking 1 hour with waterfall stop",
+                            "price": "599",
+                            "priceCurrency": "ZAR",
+                            "availability": "https://schema.org/InStock",
+                            "url": "https://capeadrenaline.com/home"
+                        },
+                        {
+                            "@type": "Offer",
+                            "name": "Dune buggy experience with waterfall stop",
+                            "price": "1500",
+                            "priceCurrency": "ZAR",
+                            "availability": "https://schema.org/InStock",
+                            "url": "https://capeadrenaline.com/home"
+                        }
+                    ]
+                }
+            ]
+        }
+        </script>
 
         <base href="/">
         <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -79,7 +136,22 @@
         <!-- <script type="text" src="./node_modules/preline/dist/preline.js"></script> -->
         <!-- <script type="text/javascript" src="../node_modules/preline/dist/preline.js"></script> -->
         <!-- App root -->
-        <app-root></app-root>
+        <app-root>
+            <main>
+                <h1>CapeAdrenaline Cape Town Forest &amp; Dune Adventures</h1>
+                <p>Book guided quad biking from R599 and dune buggy adventures from R1500 with CapeAdrenaline.</p>
+                <p>Ride forest trails from Trails End Hotel in Grabouw, stop at the waterfall, or book sand-dune quad biking at Atlantis Dunes.</p>
+                <section>
+                    <h2>Book online</h2>
+                    <ul>
+                        <li>Quadbiking 1hr from R599 per person with waterfall stop.</li>
+                        <li>Couple forest buggy adventure from R1500 per couple with waterfall stop.</li>
+                        <li>Atlantis dune quad biking from R499 per person.</li>
+                    </ul>
+                    <a href="https://capeadrenaline.com/home">Book an activity</a>
+                </section>
+            </main>
+        </app-root>
 
     </body>
 

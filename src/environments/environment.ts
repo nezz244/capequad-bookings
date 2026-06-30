@@ -9,7 +9,7 @@ export const environment = {
         siteName: 'CapeAdrenaline',
         defaultTitle: 'CapeAdrenaline | Cape Town Quad Biking & Dune Buggy Tours',
         defaultDescription:
-            'Book Cape Town quad biking and dune buggy adventures with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw — CapeAdrenaline.',
+            'Book Cape Town quad biking from R599 and dune buggy adventures from R1500 with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw — CapeAdrenaline.',
         defaultKeywords:
             'Cape Town quad biking, dune buggy Cape Town, Grabouw adventure, waterfall tour, Trails End Hotel, CapeAdrenaline, Western Cape tours',
         defaultImage: 'assets/images/activities/buggy7.png',
