@@ -842,6 +842,27 @@ app.put('/bookings/:id', async (req, res) => {
     }
 });
 
+app.delete('/bookings/:id', async (req, res) => {
+    const bookingId = Number(req.params.id);
+
+    if (!Number.isInteger(bookingId) || bookingId < 1) {
+        return res.status(400).json({ error: 'A valid booking id is required.' });
+    }
+
+    try {
+        const [result] = await db.query('DELETE FROM bookings WHERE id = ?', [bookingId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Booking not found.' });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        res.status(500).json({ error: 'Failed to delete booking' });
+    }
+});
+
 app.get('/chacco/balance_breakdown/all', async (req, res) => {
     try {
         const [expensesData] = await db.query(`

@@ -371,6 +371,7 @@ function showBookingDetails(booking) {
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-primary btn-sm" id="editBooking">Edit</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="deleteBooking">Delete</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
                 </div>
             </div>
@@ -397,6 +398,7 @@ function showBookingDetails(booking) {
 
     document.getElementById('closePanel')?.addEventListener('click', closePanel);
     document.getElementById('editBooking')?.addEventListener('click', () => recordBooking(booking));
+    document.getElementById('deleteBooking')?.addEventListener('click', () => deleteBooking(booking));
 }
 
 function detailItem(label, value) {
@@ -582,6 +584,41 @@ async function submitBooking() {
         if (status) status.textContent = error.message;
     } finally {
         if (submitButton) submitButton.disabled = false;
+    }
+}
+
+async function deleteBooking(booking) {
+    if (!booking?.id) return;
+
+    const confirmed = window.confirm(`Delete booking for ${booking.customer_name || 'this customer'} on ${formatDate(booking.booking_date)}?`);
+
+    if (!confirmed) return;
+
+    const deleteButton = document.getElementById('deleteBooking');
+    if (deleteButton) {
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Deleting...';
+    }
+
+    try {
+        const response = await fetch(`/bookings/${encodeURIComponent(booking.id)}`, {
+            method: 'DELETE',
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Could not delete booking');
+        }
+
+        closePanel();
+        await Promise.all([loadBookings(), updateDashboard(), loadConsolidation()]);
+        showMessage('Booking deleted.', 'success');
+    } catch (error) {
+        showMessage(error.message, 'danger');
+        if (deleteButton) {
+            deleteButton.disabled = false;
+            deleteButton.textContent = 'Delete';
+        }
     }
 }
 
