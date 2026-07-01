@@ -115,6 +115,17 @@ async function ensureColumn(table, column, definition) {
     }
 }
 
+async function ensureAutoIncrementId(table) {
+    const [columns] = await db.query(`SHOW COLUMNS FROM ${table} LIKE 'id'`);
+
+    if (columns.length > 0) return;
+
+    const [primaryKeys] = await db.query(`SHOW INDEX FROM ${table} WHERE Key_name = 'PRIMARY'`);
+    const keyDefinition = primaryKeys.length === 0 ? 'PRIMARY KEY' : 'UNIQUE';
+
+    await db.query(`ALTER TABLE ${table} ADD COLUMN id INT NOT NULL AUTO_INCREMENT ${keyDefinition} FIRST`);
+}
+
 async function ensureTables() {
     await db.query(`
         CREATE TABLE IF NOT EXISTS bookings (
@@ -180,6 +191,7 @@ async function ensureTables() {
             INDEX idx_account_roles_type (account_type)
         )
     `);
+    await ensureAutoIncrementId('expenses');
     await ensureColumn('incomes', 'created_by', 'VARCHAR(160)');
     await ensureColumn('expenses', 'created_by', 'VARCHAR(160)');
 
