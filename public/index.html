@@ -353,7 +353,13 @@
             const url = filter === 'currentBalance' ? `/chacco/balance_breakdown/all` : `/civil-servants?filter=${filter}`;
 
             fetch(url)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Could not load cash movement data');
+                    }
+
+                    return response.json();
+                })
                 .then(data => {
                     let transactions = [];
                     const accountType = window.currentAdmin?.account_type || 'pending';

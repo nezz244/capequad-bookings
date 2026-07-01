@@ -1,18 +1,30 @@
-document.addEventListener('DOMContentLoaded', async () => {
+window.renderIncomeTrend = async function renderIncomeTrend() {
   try {
+    const chartElement = document.getElementById('myAreaChart');
+
+    if (!chartElement || window.currentAdmin?.account_type !== 'admin') return;
+
     // Set global font family and color
     Chart.defaults.global.defaultFontFamily = '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
     Chart.defaults.global.defaultFontColor = '#292b2c';
 
     // Fetch data for Income (Line Graph)
     const incomeResponse = await fetch('/chacco/incomes/data');
+
+    if (!incomeResponse.ok) {
+      throw new Error('Could not load income trend data');
+    }
+
     const incomesData = await incomeResponse.json();
     const months = incomesData.map(item => item.month);
     const totalIncome = incomesData.map(item => item.totalIncome);
 
+    if (window.incomeTrendChart) {
+      window.incomeTrendChart.destroy();
+    }
 
     // Render Income Line Graph
-    new Chart(document.getElementById('myAreaChart'), {
+    window.incomeTrendChart = new Chart(chartElement, {
       type: 'line',
       data: {
         labels: months,
@@ -81,4 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (error) {
     console.error('Error rendering graphs:', error);
   }
+};
+
+window.addEventListener('admin-ready', () => {
+  window.renderIncomeTrend?.();
 });

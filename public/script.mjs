@@ -29,6 +29,7 @@ async function initialiseAppForAccount() {
     }
 
     await Promise.all(work);
+    window.renderIncomeTrend?.();
 }
 
 function attachListeners() {
