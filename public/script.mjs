@@ -4,6 +4,7 @@ let platformCommissions = [];
 let platformAccounts = [];
 let accountRoles = [];
 let appInitialised = false;
+let cashMovementFilterAttached = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     setDefaultBookingFilters();
@@ -47,6 +48,8 @@ function attachListeners() {
     document.getElementById('bookingFrom')?.addEventListener('change', loadBookings);
     document.getElementById('bookingTo')?.addEventListener('change', loadBookings);
     document.getElementById('searchInput')?.addEventListener('input', renderBookings);
+    document.getElementById('minDate')?.addEventListener('change', drawCashMovementTable);
+    document.getElementById('maxDate')?.addEventListener('change', drawCashMovementTable);
     document.getElementById('calendarGrid')?.addEventListener('click', handleCalendarClick);
     document.addEventListener('click', handleExpenseEditClick);
     document.getElementById('previousCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(-1));
@@ -57,6 +60,122 @@ function attachListeners() {
     });
     document.getElementById('nextCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(1));
 }
+
+function drawCashMovementTable() {
+    if (window.$?.fn?.dataTable?.isDataTable('#datatablesSimple')) {
+        window.$('#datatablesSimple').DataTable().draw();
+    }
+}
+
+function ensureCashMovementDateFilter() {
+    if (cashMovementFilterAttached || !window.$?.fn?.dataTable) return;
+
+    window.$.fn.dataTable.ext.search.push((settings, data) => {
+        if (settings.nTable?.id !== 'datatablesSimple') return true;
+
+        const min = document.getElementById('minDate')?.value;
+        const max = document.getElementById('maxDate')?.value;
+        const dateStr = data[3];
+        const date = new Date(dateStr);
+
+        return (!min || new Date(min) <= date) && (!max || new Date(max) >= date);
+    });
+    cashMovementFilterAttached = true;
+}
+
+async function loadCashMovement() {
+    ensureCashMovementDateFilter();
+
+    if (!window.$?.fn?.DataTable) return;
+
+    try {
+        const response = await fetch('/chacco/balance_breakdown/all');
+
+        if (!response.ok) {
+            throw new Error('Could not load cash movement data');
+        }
+
+        renderCashMovement(await response.json());
+    } catch (error) {
+        console.error('Error loading cash movement:', error);
+        showMessage('Could not load cash movement data.', 'danger');
+    }
+}
+
+function renderCashMovement(data) {
+    const isAdmin = isAdminAccount();
+    const transactions = [];
+
+    if (isAdmin) {
+        (data.incomes || []).forEach((income) => {
+            transactions.push({
+                transactionName: income.name ?? 'Income',
+                income: income.amount,
+                expense: null,
+                date: new Date(income.date),
+                createdBy: income.created_by || '',
+                notes: income.notes || '',
+                action: '',
+            });
+        });
+    }
+
+    (data.expenses || []).forEach((expense) => {
+        transactions.push({
+            id: expense.id,
+            transactionName: expense.expense_name,
+            income: null,
+            expense: expense.amount,
+            date: new Date(expense.expense_date),
+            createdBy: expense.created_by || '',
+            notes: expense.notes || '',
+            action: isAdmin ? `<button type="button" class="btn btn-outline-primary btn-sm edit-expense-button" data-expense-id="${escapeHtml(expense.id)}">Edit</button>` : '',
+        });
+    });
+
+    transactions.sort((a, b) => a.date - b.date);
+
+    const rows = transactions.map((transaction) => [
+        transaction.transactionName,
+        transaction.income ?? '',
+        transaction.expense ?? '',
+        toDateInputValue(transaction.date).replaceAll('-', '/'),
+        transaction.createdBy ?? '',
+        transaction.notes,
+        transaction.action,
+    ]);
+
+    if (window.$.fn.dataTable.isDataTable('#datatablesSimple')) {
+        const table = window.$('#datatablesSimple').DataTable();
+        table.clear().rows.add(rows).draw();
+        table.column(1).visible(isAdmin);
+        table.column(6).visible(isAdmin);
+        return;
+    }
+
+    window.$('#datatablesSimple').DataTable({
+        data: rows,
+        columns: [
+            { title: 'Transaction' },
+            { title: 'Income' },
+            { title: 'Expense' },
+            { title: 'Date' },
+            { title: 'Recorded by' },
+            { title: 'Notes' },
+            { title: 'Action', orderable: false, searchable: false },
+        ],
+        dom: 'Bfrtip',
+        buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+        pageLength: 8,
+        order: [[3, 'desc']],
+    });
+
+    const table = window.$('#datatablesSimple').DataTable();
+    table.column(1).visible(isAdmin);
+    table.column(6).visible(isAdmin);
+}
+
+window.breakDown = () => loadCashMovement();
 
 function getAccountType() {
     return window.currentAdmin?.account_type || 'pending';
