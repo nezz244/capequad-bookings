@@ -92,7 +92,8 @@ async function loadCashMovement() {
         const response = await fetch('/chacco/balance_breakdown/all');
 
         if (!response.ok) {
-            throw new Error('Could not load cash movement data');
+            const errorText = await response.text();
+            throw new Error(`Could not load cash movement data (${response.status}): ${errorText}`);
         }
 
         renderCashMovement(await response.json());
