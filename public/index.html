@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
     <link href="css/styles.css" rel="stylesheet" />
+    <style>
+        body:not([data-account-type="admin"]) .admin-only {
+            display: none !important;
+        }
+    </style>
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
 <body class="ops-page">
@@ -27,11 +32,11 @@
                     <i class="fas fa-calendar-days"></i>
                     <span>Calendar</span>
                 </a>
-                <button id="bookingButton" class="ops-nav-link" type="button">
+                <button id="bookingButton" class="ops-nav-link admin-only" type="button">
                     <i class="fas fa-calendar-plus"></i>
                     <span>New booking</span>
                 </button>
-                <button id="incomeButton" class="ops-nav-link" type="button">
+                <button id="incomeButton" class="ops-nav-link admin-only" type="button">
                     <i class="fas fa-coins"></i>
                     <span>Record income</span>
                 </button>
@@ -39,11 +44,11 @@
                     <i class="fas fa-receipt"></i>
                     <span>Record expense</span>
                 </button>
-                <button id="consolidationButton" class="ops-nav-link" type="button">
+                <button id="consolidationButton" class="ops-nav-link admin-only" type="button">
                     <i class="fas fa-chart-column"></i>
                     <span>Consolidation</span>
                 </button>
-                <button id="settingsButton" class="ops-nav-link" type="button">
+                <button id="settingsButton" class="ops-nav-link admin-only" type="button">
                     <i class="fas fa-sliders"></i>
                     <span>Settings</span>
                 </button>
@@ -53,7 +58,7 @@
                 <span class="status-dot"></span>
                 <div>
                     <strong id="currentAdminName">Admin</strong>
-                    <small>Records saved under this account</small>
+                    <small id="currentAccountType">Records saved under this account</small>
                 </div>
             </div>
         </aside>
@@ -69,7 +74,7 @@
                         <i class="fas fa-search"></i>
                         <input id="searchInput" type="search" placeholder="Search customer, phone, platform..." aria-label="Search bookings" />
                     </div>
-                    <button id="quickBookingButton" class="btn btn-primary" type="button">
+                    <button id="quickBookingButton" class="btn btn-primary admin-only" type="button">
                         <i class="fas fa-plus"></i>
                         <span>New booking</span>
                     </button>
@@ -82,7 +87,7 @@
             <div id="listContainer"></div>
 
             <main class="ops-content">
-                <section class="metrics-grid finance-metrics" aria-label="Current finance summary">
+                <section class="metrics-grid finance-metrics admin-only" aria-label="Current finance summary">
                     <article class="metric-card">
                         <div class="metric-icon"><i class="fas fa-calendar-check"></i></div>
                         <div>
@@ -166,7 +171,7 @@
                     <div id="calendarGrid" class="booking-calendar" aria-live="polite"></div>
                 </section>
 
-                <section class="surface">
+                <section class="surface admin-only">
                     <div class="surface-header">
                         <div>
                             <p class="eyebrow">Booking log</p>
@@ -197,7 +202,7 @@
                 </section>
 
                 <section class="finance-grid">
-                    <article class="surface">
+                    <article class="surface admin-only">
                         <div class="surface-header">
                             <div>
                                 <p class="eyebrow">Income trend</p>
@@ -213,7 +218,7 @@
                         <div class="surface-header compact">
                             <div>
                                 <p class="eyebrow">Cash movement</p>
-                                <h2>Income and expenses</h2>
+                                <h2 id="transactionsTitle">Income and expenses</h2>
                             </div>
                         </div>
                         <div class="date-range finance-filter">
@@ -241,7 +246,7 @@
                     </article>
                 </section>
 
-                <section id="consolidationSection" class="surface consolidation-surface">
+                <section id="consolidationSection" class="surface consolidation-surface admin-only">
                     <div class="surface-header">
                         <div>
                             <p class="eyebrow">Month-to-month consolidation</p>
@@ -330,10 +335,18 @@
             );
 
             $('#minDate, #maxDate').on('change', function () {
-                $('#datatablesSimple').DataTable().draw();
+                if ($.fn.dataTable.isDataTable('#datatablesSimple')) {
+                    $('#datatablesSimple').DataTable().draw();
+                }
             });
 
-            breakDown('currentBalance');
+            window.addEventListener('admin-ready', function () {
+                breakDown('currentBalance');
+            });
+
+            if (window.currentAdmin) {
+                breakDown('currentBalance');
+            }
         });
 
         function breakDown(filter) {
@@ -343,19 +356,23 @@
                 .then(response => response.json())
                 .then(data => {
                     let transactions = [];
+                    const accountType = window.currentAdmin?.account_type || 'pending';
+                    const isAdmin = accountType === 'admin';
 
                     if (filter === 'currentBalance') {
-                        data.incomes.forEach(income => {
-                            transactions.push({
-                                transactionName: income.name ?? 'Income',
-                                income: income.amount,
-                                expense: null,
-                                date: new Date(income.date),
-                                createdBy: income.created_by || '',
-                                notes: income.notes || '',
-                                action: ''
+                        if (isAdmin) {
+                            data.incomes.forEach(income => {
+                                transactions.push({
+                                    transactionName: income.name ?? 'Income',
+                                    income: income.amount,
+                                    expense: null,
+                                    date: new Date(income.date),
+                                    createdBy: income.created_by || '',
+                                    notes: income.notes || '',
+                                    action: ''
+                                });
                             });
-                        });
+                        }
 
                         data.expenses.forEach(expense => {
                             transactions.push({
@@ -366,7 +383,7 @@
                                 date: new Date(expense.expense_date),
                                 createdBy: expense.created_by || '',
                                 notes: expense.notes || '',
-                                action: `<button type="button" class="btn btn-outline-primary btn-sm edit-expense-button" data-expense-id="${expense.id}">Edit</button>`
+                                action: isAdmin ? `<button type="button" class="btn btn-outline-primary btn-sm edit-expense-button" data-expense-id="${expense.id}">Edit</button>` : ''
                             });
                         });
                     }
@@ -384,7 +401,10 @@
                     ]);
 
                     if ($.fn.dataTable.isDataTable('#datatablesSimple')) {
-                        $('#datatablesSimple').DataTable().clear().rows.add(rows).draw();
+                        const table = $('#datatablesSimple').DataTable();
+                        table.clear().rows.add(rows).draw();
+                        table.column(1).visible(isAdmin);
+                        table.column(6).visible(isAdmin);
                     } else {
                         $('#datatablesSimple').DataTable({
                             data: rows,
@@ -402,6 +422,9 @@
                             pageLength: 8,
                             order: [[3, 'desc']]
                         });
+                        const table = $('#datatablesSimple').DataTable();
+                        table.column(1).visible(isAdmin);
+                        table.column(6).visible(isAdmin);
                     }
                 })
                 .catch(error => {

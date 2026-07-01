@@ -4,6 +4,8 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const path = require('path');
+const crypto = require('crypto');
+const https = require('https');
 
 const app = express();
 // Serve index.html from root directory
@@ -50,6 +52,60 @@ const defaultCommissions = [
     ['Direct', 0],
     ['Other', 0],
 ];
+const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || 'moola-2e730';
+let firebaseCertCache = {
+    expiresAt: 0,
+    certs: {},
+};
+
+function base64UrlToBuffer(value) {
+    const padded = `${value}${'='.repeat((4 - (value.length % 4)) % 4)}`;
+    return Buffer.from(padded.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+}
+
+function parseJwtPart(value) {
+    return JSON.parse(base64UrlToBuffer(value).toString('utf8'));
+}
+
+function fetchFirebaseCerts() {
+    return new Promise((resolve, reject) => {
+        https.get('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com', (response) => {
+            let body = '';
+
+            response.setEncoding('utf8');
+            response.on('data', (chunk) => {
+                body += chunk;
+            });
+            response.on('end', () => {
+                if (response.statusCode !== 200) {
+                    reject(new Error(`Firebase cert fetch failed with status ${response.statusCode}`));
+                    return;
+                }
+
+                const maxAgeMatch = String(response.headers['cache-control'] || '').match(/max-age=(\d+)/);
+                const maxAgeSeconds = maxAgeMatch ? Number(maxAgeMatch[1]) : 3600;
+
+                try {
+                    resolve({
+                        certs: JSON.parse(body),
+                        expiresAt: Date.now() + (maxAgeSeconds * 1000),
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }).on('error', reject);
+    });
+}
+
+async function getFirebaseCerts() {
+    if (firebaseCertCache.expiresAt > Date.now() && Object.keys(firebaseCertCache.certs).length > 0) {
+        return firebaseCertCache.certs;
+    }
+
+    firebaseCertCache = await fetchFirebaseCerts();
+    return firebaseCertCache.certs;
+}
 
 async function ensureColumn(table, column, definition) {
     const [columns] = await db.query(`SHOW COLUMNS FROM ${table} LIKE ?`, [column]);
@@ -113,6 +169,17 @@ async function ensureTables() {
             INDEX idx_platform_account_platform (platform_name)
         )
     `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS account_roles (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(190) NOT NULL UNIQUE,
+            account_type VARCHAR(20) NOT NULL DEFAULT 'admin',
+            updated_by VARCHAR(160),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_account_roles_type (account_type)
+        )
+    `);
     await ensureColumn('incomes', 'created_by', 'VARCHAR(160)');
     await ensureColumn('expenses', 'created_by', 'VARCHAR(160)');
 
@@ -149,6 +216,114 @@ const normaliseBlank = (value) => {
     return trimmed === '' ? null : trimmed;
 };
 const getCreatedBy = (body) => normaliseBlank(body.created_by) || normaliseBlank(body.admin_name) || 'Unknown admin';
+const normaliseEmail = (email) => String(email || '').trim().toLowerCase();
+
+async function getStoredAccountType(email) {
+    const normalisedEmail = normaliseEmail(email);
+
+    if (!normalisedEmail) return null;
+
+    const [rows] = await db.query('SELECT account_type FROM account_roles WHERE email = ?', [normalisedEmail]);
+    if (rows[0]?.account_type) return rows[0].account_type;
+
+    const [countRows] = await db.query('SELECT COUNT(*) AS roleCount FROM account_roles');
+    return Number(countRows[0]?.roleCount || 0) === 0 ? 'admin' : null;
+}
+
+async function verifyFirebaseToken(idToken) {
+    const parts = String(idToken || '').split('.');
+
+    if (parts.length !== 3) {
+        throw new Error('Invalid token format');
+    }
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    const header = parseJwtPart(encodedHeader);
+    const payload = parseJwtPart(encodedPayload);
+
+    if (header.alg !== 'RS256') {
+        throw new Error('Invalid token algorithm');
+    }
+
+    const certs = await getFirebaseCerts();
+    const cert = certs[header.kid];
+
+    if (!cert) {
+        throw new Error('Unknown token key id');
+    }
+
+    const verifier = crypto.createVerify('RSA-SHA256');
+    verifier.update(`${encodedHeader}.${encodedPayload}`);
+    verifier.end();
+
+    if (!verifier.verify(cert, base64UrlToBuffer(encodedSignature))) {
+        throw new Error('Invalid token signature');
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const expectedIssuer = `https://securetoken.google.com/${firebaseProjectId}`;
+
+    if (payload.aud !== firebaseProjectId || payload.iss !== expectedIssuer || !payload.sub || payload.exp <= now) {
+        throw new Error('Invalid token claims');
+    }
+
+    return {
+        uid: payload.sub,
+        email: normaliseEmail(payload.email),
+        name: payload.name || payload.email || payload.sub,
+    };
+}
+
+async function getAuthContext(req) {
+    if (req.authContext) return req.authContext;
+
+    const authHeader = req.get('Authorization') || '';
+    const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+
+    if (!tokenMatch) {
+        return null;
+    }
+
+    const user = await verifyFirebaseToken(tokenMatch[1]);
+    const accountType = await getStoredAccountType(user.email);
+
+    req.authContext = {
+        ...user,
+        account_type: accountType,
+    };
+
+    return req.authContext;
+}
+
+async function requireTeamMember(req, res) {
+    try {
+        const authContext = await getAuthContext(req);
+
+        if (!authContext?.email || !['admin', 'guide'].includes(authContext.account_type)) {
+            res.status(403).json({ error: 'Team access is required.' });
+            return null;
+        }
+
+        return authContext;
+    } catch (error) {
+        console.error('Authentication failed:', error.message);
+        res.status(401).json({ error: 'Could not verify account access.' });
+        return null;
+    }
+}
+
+async function requireAdmin(req, res) {
+    const authContext = await requireTeamMember(req, res);
+
+    if (!authContext) return null;
+
+    if (authContext.account_type !== 'admin') {
+        res.status(403).json({ error: 'Admin access is required.' });
+        return null;
+    }
+
+    return authContext;
+}
 
 function buildExpenseFromBody(body) {
     return {
@@ -262,6 +437,8 @@ function bookingIncomeSelect(whereClause = '') {
 }
 
 app.post('/expenses', async (req, res) => {
+    if (!(await requireTeamMember(req, res))) return;
+
     const expense = buildExpenseFromBody(req.body);
     const validationError = validateExpensePayload(expense);
 
@@ -287,6 +464,8 @@ app.post('/expenses', async (req, res) => {
 
 // Fetch the total of all expenses
 app.get('/expenses/total', async (req, res) => {
+    if (!(await requireTeamMember(req, res))) return;
+
     try {
         const [result] = await db.query('SELECT SUM(amount) AS total FROM expenses');
         res.json(result[0] || { total: 0 });
@@ -297,6 +476,8 @@ app.get('/expenses/total', async (req, res) => {
 });
 // Fetch all expenses
 app.get('/expenses', async (req, res) => {
+    if (!(await requireTeamMember(req, res))) return;
+
     try {
         const [expenses] = await db.query('SELECT * FROM expenses');
         res.json(expenses);
@@ -307,6 +488,8 @@ app.get('/expenses', async (req, res) => {
 });
 
 app.get('/expenses/:id', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const expenseId = Number(req.params.id);
 
     if (!Number.isInteger(expenseId) || expenseId < 1) {
@@ -328,6 +511,8 @@ app.get('/expenses/:id', async (req, res) => {
 });
 
 app.put('/expenses/:id', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const expenseId = Number(req.params.id);
     const expense = buildExpenseFromBody(req.body);
     const validationError = validateExpensePayload(expense);
@@ -370,6 +555,8 @@ app.put('/expenses/:id', async (req, res) => {
     }
 });
 app.get('/chacco/expenses/total', async (req, res) => {
+    if (!(await requireTeamMember(req, res))) return;
+
     try {
         // Query to calculate the sum of the amounts in the expenses table
         const [result] = await db.query('SELECT SUM(amount) AS total FROM expenses');
@@ -383,6 +570,8 @@ app.get('/chacco/expenses/total', async (req, res) => {
 });
 //income data
 app.get('/chacco/incomes/data', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     try {
         const [rows] = await db.query(`
             SELECT
@@ -405,6 +594,8 @@ app.get('/chacco/incomes/data', async (req, res) => {
     }
 });
 app.post('/incomes', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     try {
         const { name, amount, date, notes } = req.body;
         const createdBy = getCreatedBy(req.body);
@@ -439,6 +630,8 @@ app.post('/incomes', async (req, res) => {
     }
 });
 app.get('/chacco/incomes/total', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     try {
         const [manualRows] = await db.query(`
             SELECT COALESCE(SUM(amount), 0) AS manualIncome FROM incomes
@@ -468,6 +661,8 @@ app.get('/chacco/incomes/total', async (req, res) => {
 });
 
 app.get('/platform-commissions', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     try {
         const [rows] = await db.query(`
             SELECT platform_name, commission_rate, updated_by, updated_at
@@ -483,6 +678,8 @@ app.get('/platform-commissions', async (req, res) => {
 });
 
 app.put('/platform-commissions', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const commissions = Array.isArray(req.body.commissions) ? req.body.commissions : [];
     const updatedBy = getCreatedBy(req.body);
 
@@ -520,6 +717,8 @@ app.put('/platform-commissions', async (req, res) => {
 });
 
 app.get('/platform-accounts', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     try {
         const [rows] = await db.query(`
             SELECT id, platform_name, account_name, commission_rate, is_active, updated_by, created_at, updated_at
@@ -535,6 +734,8 @@ app.get('/platform-accounts', async (req, res) => {
 });
 
 app.put('/platform-accounts', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const accounts = Array.isArray(req.body.accounts) ? req.body.accounts : [];
     const updatedBy = getCreatedBy(req.body);
 
@@ -580,7 +781,87 @@ app.put('/platform-accounts', async (req, res) => {
     }
 });
 
+app.get('/account-role', async (req, res) => {
+    const authContext = await requireTeamMember(req, res);
+    if (!authContext) return;
+
+    try {
+        res.json({ email: authContext.email, account_type: authContext.account_type });
+    } catch (error) {
+        console.error('Error fetching account role:', error);
+        res.status(500).json({ error: 'Failed to fetch account role' });
+    }
+});
+
+app.get('/account-roles', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
+    try {
+        const [rows] = await db.query(`
+            SELECT email, account_type, updated_by, created_at, updated_at
+            FROM account_roles
+            ORDER BY email
+        `);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching account roles:', error);
+        res.status(500).json({ error: 'Failed to fetch account roles' });
+    }
+});
+
+app.put('/account-roles', async (req, res) => {
+    const authContext = await requireAdmin(req, res);
+    if (!authContext) return;
+
+    const roles = Array.isArray(req.body.roles) ? req.body.roles : [];
+    const updatedBy = getCreatedBy(req.body);
+    const rolesToSave = [...roles];
+
+    if (!rolesToSave.some((role) => normaliseEmail(role.email) === authContext.email)) {
+        rolesToSave.push({
+            email: authContext.email,
+            account_type: 'admin',
+        });
+    }
+
+    try {
+        for (const role of rolesToSave) {
+            const email = normaliseEmail(role.email);
+            const accountType = String(role.account_type || '').toLowerCase();
+
+            if (!email || !['admin', 'guide'].includes(accountType)) {
+                return res.status(400).json({ error: 'Each team member needs an email and either admin or guide access.' });
+            }
+
+            if (email === authContext.email && accountType !== 'admin') {
+                return res.status(400).json({ error: 'You cannot change your own admin access to guide.' });
+            }
+
+            await db.query(`
+                INSERT INTO account_roles (email, account_type, updated_by)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    account_type = VALUES(account_type),
+                    updated_by = VALUES(updated_by)
+            `, [email, accountType, updatedBy]);
+        }
+
+        const [rows] = await db.query(`
+            SELECT email, account_type, updated_by, created_at, updated_at
+            FROM account_roles
+            ORDER BY email
+        `);
+
+        res.json({ success: true, roles: rows });
+    } catch (error) {
+        console.error('Error updating account roles:', error);
+        res.status(500).json({ error: 'Failed to update account roles' });
+    }
+});
+
 app.get('/finance/summary', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     try {
         const [incomeRows] = await db.query(`
             SELECT
@@ -612,6 +893,8 @@ app.get('/finance/summary', async (req, res) => {
 });
 
 app.get('/finance/consolidation', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const { from, to } = req.query;
 
     if (!from || !to || !isValidDate(from) || !isValidDate(to)) {
@@ -729,6 +1012,9 @@ app.get('/finance/consolidation', async (req, res) => {
 });
 
 app.get('/bookings', async (req, res) => {
+    const authContext = await requireTeamMember(req, res);
+    if (!authContext) return;
+
     const { from, to } = req.query;
     const params = [];
     const where = [];
@@ -787,6 +1073,29 @@ app.get('/bookings', async (req, res) => {
             ORDER BY booking_date DESC, start_time DESC
         `, params);
 
+        if (authContext.account_type === 'guide') {
+            res.json(rows.map((row) => ({
+                id: row.id,
+                customer_name: row.customer_name,
+                pax: row.pax,
+                phone: row.phone,
+                platform: row.platform,
+                account_name: row.account_name,
+                product_name: row.product_name,
+                booking_date: row.booking_date,
+                start_time: row.start_time,
+                duration_minutes: row.duration_minutes,
+                location: row.location,
+                payment_status: row.payment_status,
+                notes: row.notes,
+                created_by: row.created_by,
+                calendar_status: row.calendar_status,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            })));
+            return;
+        }
+
         res.json(rows);
     } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -795,6 +1104,8 @@ app.get('/bookings', async (req, res) => {
 });
 
 app.post('/bookings', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const booking = buildBookingFromBody(req.body);
     const validationError = validateBookingPayload(booking);
 
@@ -855,6 +1166,8 @@ app.post('/bookings', async (req, res) => {
 });
 
 app.put('/bookings/:id', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const bookingId = Number(req.params.id);
     const booking = buildBookingFromBody(req.body);
     const validationError = validateBookingPayload(booking);
@@ -924,6 +1237,8 @@ app.put('/bookings/:id', async (req, res) => {
 });
 
 app.delete('/bookings/:id', async (req, res) => {
+    if (!(await requireAdmin(req, res))) return;
+
     const bookingId = Number(req.params.id);
 
     if (!Number.isInteger(bookingId) || bookingId < 1) {
@@ -945,6 +1260,9 @@ app.delete('/bookings/:id', async (req, res) => {
 });
 
 app.get('/chacco/balance_breakdown/all', async (req, res) => {
+    const authContext = await requireTeamMember(req, res);
+    if (!authContext) return;
+
     try {
         const [expensesData] = await db.query(`
             SELECT
@@ -957,6 +1275,15 @@ app.get('/chacco/balance_breakdown/all', async (req, res) => {
             FROM
                 expenses
         `);
+
+        if (authContext.account_type === 'guide') {
+            res.json({
+                incomes: [],
+                expenses: expensesData,
+            });
+            return;
+        }
+
         const [incomesData] = await db.query(`
             SELECT
                 name,

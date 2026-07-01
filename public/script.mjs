@@ -2,13 +2,34 @@ let cachedBookings = [];
 let calendarCursor = startOfMonth(new Date());
 let platformCommissions = [];
 let platformAccounts = [];
+let accountRoles = [];
+let appInitialised = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     setDefaultBookingFilters();
     setDefaultConsolidationRange();
     attachListeners();
-    await Promise.all([updateDashboard(), loadBookings(), loadPlatformCommissions(), loadPlatformAccounts(), loadConsolidation()]);
+    window.addEventListener('admin-ready', initialiseAppForAccount);
+
+    if (window.currentAdmin) {
+        await initialiseAppForAccount();
+    }
 });
+
+async function initialiseAppForAccount() {
+    if (appInitialised) return;
+
+    appInitialised = true;
+    applyAccessControls();
+
+    const work = [loadBookings()];
+
+    if (isAdminAccount()) {
+        work.push(updateDashboard(), loadPlatformCommissions(), loadPlatformAccounts(), loadConsolidation());
+    }
+
+    await Promise.all(work);
+}
 
 function attachListeners() {
     document.getElementById('bookingButton')?.addEventListener('click', () => recordBooking());
@@ -33,6 +54,36 @@ function attachListeners() {
         loadBookings();
     });
     document.getElementById('nextCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(1));
+}
+
+function getAccountType() {
+    return window.currentAdmin?.account_type || 'pending';
+}
+
+function isAdminAccount() {
+    return getAccountType() === 'admin';
+}
+
+function getAccountPayload() {
+    return {
+        created_by: getAdminName(),
+        account_type: getAccountType(),
+        account_email: window.currentAdmin?.email || '',
+    };
+}
+
+function applyAccessControls() {
+    const isAdmin = isAdminAccount();
+
+    document.body.dataset.accountType = getAccountType();
+    document.querySelectorAll('.admin-only').forEach((element) => {
+        element.hidden = !isAdmin;
+    });
+
+    const transactionsTitle = document.getElementById('transactionsTitle');
+    if (transactionsTitle) {
+        transactionsTitle.textContent = isAdmin ? 'Income and expenses' : 'Expenses';
+    }
 }
 
 function setDefaultBookingFilters() {
@@ -207,6 +258,28 @@ async function loadPlatformAccounts() {
     }
 }
 
+async function loadAccountRoles() {
+    try {
+        const response = await fetch('/account-roles', {
+            headers: {
+                'X-Account-Type': getAccountType(),
+                'X-Account-Email': window.currentAdmin?.email || '',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Could not load team access');
+        }
+
+        accountRoles = await response.json();
+        return true;
+    } catch (error) {
+        console.error('Error loading team access:', error);
+        accountRoles = [];
+        return false;
+    }
+}
+
 async function loadBookings() {
     const from = document.getElementById('bookingFrom')?.value;
     const to = document.getElementById('bookingTo')?.value;
@@ -375,6 +448,7 @@ function handleCalendarClick(event) {
 }
 
 function showBookingDetails(booking) {
+    const isAdmin = isAdminAccount();
     openPanel(`
         <div class="booking-panel booking-details-panel">
             <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
@@ -384,8 +458,8 @@ function showBookingDetails(booking) {
                     <div class="text-muted">${escapeHtml(formatDate(booking.booking_date))} · ${escapeHtml(booking.start_time)} · ${escapeHtml(String(booking.pax || 0))}pax</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" id="editBooking">Edit</button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="deleteBooking">Delete</button>
+                    ${isAdmin ? '<button type="button" class="btn btn-primary btn-sm" id="editBooking">Edit</button>' : ''}
+                    ${isAdmin ? '<button type="button" class="btn btn-outline-danger btn-sm" id="deleteBooking">Delete</button>' : ''}
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
                 </div>
             </div>
@@ -397,9 +471,9 @@ function showBookingDetails(booking) {
                 ${detailItem('Product', booking.product_name)}
                 ${detailItem('Location', booking.location)}
                 ${detailItem('Payment', booking.payment_status)}
-                ${detailItem('Gross amount', formatMoney(booking.gross_amount))}
-                ${detailItem('Commission', `${formatMoney(booking.commission_amount)} (${formatPercent(booking.commission_rate)})`)}
-                ${detailItem('Net income', formatMoney(booking.net_amount))}
+                ${isAdmin ? detailItem('Gross amount', formatMoney(booking.gross_amount)) : ''}
+                ${isAdmin ? detailItem('Commission', `${formatMoney(booking.commission_amount)} (${formatPercent(booking.commission_rate)})`) : ''}
+                ${isAdmin ? detailItem('Net income', formatMoney(booking.net_amount)) : ''}
                 ${detailItem('Recorded by', booking.created_by)}
             </div>
 
@@ -439,6 +513,11 @@ function updateBookingStats() {
 }
 
 async function recordBooking(booking = null) {
+    if (!isAdminAccount()) {
+        showMessage('Only admins can record or edit bookings.', 'warning');
+        return;
+    }
+
     const isEditing = Boolean(booking?.id);
     const today = toDateInputValue(new Date());
     const adminName = getAdminName();
@@ -569,7 +648,7 @@ async function submitBooking() {
         payment_status: getValue('paymentStatus'),
         amount: getValue('amount'),
         notes: getValue('notes'),
-        created_by: getAdminName(),
+        ...getAccountPayload(),
     };
 
     if (status) status.textContent = isEditing ? 'Updating...' : 'Saving...';
@@ -617,6 +696,10 @@ async function deleteBooking(booking) {
     try {
         const response = await fetch(`/bookings/${encodeURIComponent(booking.id)}`, {
             method: 'DELETE',
+            headers: {
+                'X-Account-Type': getAccountType(),
+                'X-Account-Email': window.currentAdmin?.email || '',
+            },
         });
         const data = await response.json();
 
@@ -637,6 +720,11 @@ async function deleteBooking(booking) {
 }
 
 function recordIncome() {
+    if (!isAdminAccount()) {
+        showMessage('Only admins can record income.', 'warning');
+        return;
+    }
+
     const adminName = getAdminName();
     openPanel(`
         <div class="booking-panel">
@@ -667,7 +755,7 @@ async function submitIncome() {
         amount: parseFloat(getValue('incomeAmount')),
         date: getValue('incomeDate'),
         notes: getValue('incomeNotes'),
-        created_by: getAdminName(),
+        ...getAccountPayload(),
     };
 
     try {
@@ -692,6 +780,11 @@ async function submitIncome() {
 
 function recordExpenses(expense = null) {
     const isEditing = Boolean(expense?.id);
+    if (isEditing && !isAdminAccount()) {
+        showMessage('Only admins can edit recorded expenses.', 'warning');
+        return;
+    }
+
     const adminName = getAdminName();
     openPanel(`
         <div class="booking-panel">
@@ -724,7 +817,7 @@ async function submitExpense() {
         amount: parseFloat(getValue('expenseAmount')),
         date: getValue('expenseDate'),
         notes: getValue('expenseNotes'),
-        created_by: getAdminName(),
+        ...getAccountPayload(),
     };
 
     try {
@@ -736,12 +829,14 @@ async function submitExpense() {
 
         if (!response.ok) {
             const data = await response.json();
-            throw new Error(data.message || 'Could not save expense');
+            throw new Error(data.message || data.error || 'Could not save expense');
         }
 
         closePanel();
-        await updateDashboard();
-        await loadConsolidation();
+        if (isAdminAccount()) {
+            await updateDashboard();
+            await loadConsolidation();
+        }
         window.breakDown?.('currentBalance');
         showMessage(isEditing ? 'Expense updated successfully.' : 'Expense added successfully.', 'success');
     } catch (error) {
@@ -753,6 +848,10 @@ async function handleExpenseEditClick(event) {
     const button = event.target.closest('.edit-expense-button');
 
     if (!button) return;
+    if (!isAdminAccount()) {
+        showMessage('Only admins can edit recorded expenses.', 'warning');
+        return;
+    }
 
     const expenseId = button.dataset.expenseId;
 
@@ -771,12 +870,18 @@ async function handleExpenseEditClick(event) {
 }
 
 async function openSettings() {
+    if (!isAdminAccount()) {
+        showMessage('Only admins can open settings.', 'warning');
+        return;
+    }
+
     if (platformCommissions.length === 0) {
         await loadPlatformCommissions();
     }
     if (platformAccounts.length === 0) {
         await loadPlatformAccounts();
     }
+    const accountRolesLoaded = await loadAccountRoles();
 
     openPanel(`
         <div class="booking-panel settings-panel">
@@ -825,6 +930,24 @@ async function openSettings() {
                 <input id="newAccountCommission" type="number" min="0" max="100" step="0.01" class="form-control" placeholder="Override %">
                 <button type="button" id="addAccountRow" class="btn btn-outline-primary">Add Account</button>
             </div>
+            <hr class="settings-divider">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <p class="eyebrow mb-1">Access</p>
+                    <h3 class="mb-0">Team access</h3>
+                </div>
+            </div>
+            <div class="settings-list" id="accountRoleSettingsList">
+                ${accountRolesLoaded ? accountRoles.map(renderAccountRoleSettingsRow).join('') : '<div class="text-danger">Could not load team access.</div>'}
+            </div>
+            <div class="add-account-row mt-3">
+                <input id="newRoleEmail" type="email" class="form-control" placeholder="guide@example.com">
+                <select id="newRoleType" class="form-select">
+                    <option value="guide">Guide</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button type="button" id="addRoleRow" class="btn btn-outline-primary" ${accountRolesLoaded ? '' : 'disabled'}>Add Access</button>
+            </div>
             <div class="d-flex align-items-center gap-2 mt-4">
                 <button type="button" id="saveCommissions" class="btn btn-primary">Save Settings</button>
                 <span id="settingsStatus" class="text-muted"></span>
@@ -835,6 +958,7 @@ async function openSettings() {
     document.getElementById('closePanel')?.addEventListener('click', closePanel);
     document.getElementById('saveCommissions')?.addEventListener('click', saveCommissions);
     document.getElementById('addAccountRow')?.addEventListener('click', addAccountSettingsRow);
+    document.getElementById('addRoleRow')?.addEventListener('click', addAccountRoleSettingsRow);
 }
 
 async function saveCommissions() {
@@ -853,6 +977,10 @@ async function saveCommissions() {
             is_active: row.querySelector('.account-active-input').checked,
         };
     });
+    const roles = [...document.querySelectorAll('.account-role-settings-row')].map((row) => ({
+        email: row.querySelector('.role-email-input').value,
+        account_type: row.querySelector('.role-type-input').value,
+    }));
 
     if (status) status.textContent = 'Saving...';
     if (button) button.disabled = true;
@@ -863,7 +991,7 @@ async function saveCommissions() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 commissions,
-                created_by: getAdminName(),
+                ...getAccountPayload(),
             }),
         });
         const data = await response.json();
@@ -878,7 +1006,7 @@ async function saveCommissions() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 accounts,
-                created_by: getAdminName(),
+                ...getAccountPayload(),
             }),
         });
         const accountsData = await accountsResponse.json();
@@ -888,6 +1016,21 @@ async function saveCommissions() {
         }
 
         platformAccounts = accountsData.accounts;
+        const rolesResponse = await fetch('/account-roles', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                roles,
+                ...getAccountPayload(),
+            }),
+        });
+        const rolesData = await rolesResponse.json();
+
+        if (!rolesResponse.ok) {
+            throw new Error(rolesData.error || 'Could not save team access');
+        }
+
+        accountRoles = rolesData.roles;
         closePanel();
         await Promise.all([updateDashboard(), loadBookings()]);
         showMessage('Commission settings updated.', 'success');
@@ -978,6 +1121,44 @@ function addAccountSettingsRow() {
     }));
     document.getElementById('newAccountName').value = '';
     document.getElementById('newAccountCommission').value = '';
+}
+
+function renderAccountRoleSettingsRow(role) {
+    const accountType = role.account_type === 'guide' ? 'guide' : 'admin';
+
+    return `
+        <label class="commission-row account-role-settings-row">
+            <span>
+                <strong>${escapeHtml(role.email)}</strong>
+                <small>${accountType === 'admin' ? 'Full dashboard access' : 'Calendar and expenses only'}</small>
+            </span>
+            <input type="hidden" class="role-email-input" value="${escapeHtml(role.email)}">
+            <select class="form-select role-type-input">
+                <option value="guide" ${selectIf(accountType, 'guide')}>Guide</option>
+                <option value="admin" ${selectIf(accountType, 'admin')}>Admin</option>
+            </select>
+        </label>
+    `;
+}
+
+function addAccountRoleSettingsRow() {
+    const email = getValue('newRoleEmail').toLowerCase();
+    const accountType = getValue('newRoleType');
+    const list = document.getElementById('accountRoleSettingsList');
+
+    if (!email || !['admin', 'guide'].includes(accountType) || !list) return;
+
+    const exists = [...document.querySelectorAll('.account-role-settings-row')].some((row) => (
+        row.querySelector('.role-email-input').value.toLowerCase() === email
+    ));
+
+    if (exists) return;
+
+    list.insertAdjacentHTML('beforeend', renderAccountRoleSettingsRow({
+        email,
+        account_type: accountType,
+    }));
+    document.getElementById('newRoleEmail').value = '';
 }
 
 function getPlatformNames() {
