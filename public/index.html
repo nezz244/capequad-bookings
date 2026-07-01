@@ -232,6 +232,7 @@
                                     <th>Date</th>
                                     <th>Recorded by</th>
                                     <th>Notes</th>
+                                    <th>Action</th>
                                 </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -351,18 +352,21 @@
                                 expense: null,
                                 date: new Date(income.date),
                                 createdBy: income.created_by || '',
-                                notes: income.notes || ''
+                                notes: income.notes || '',
+                                action: ''
                             });
                         });
 
                         data.expenses.forEach(expense => {
                             transactions.push({
+                                id: expense.id,
                                 transactionName: expense.expense_name,
                                 income: null,
                                 expense: expense.amount,
                                 date: new Date(expense.expense_date),
                                 createdBy: expense.created_by || '',
-                                notes: expense.notes || ''
+                                notes: expense.notes || '',
+                                action: `<button type="button" class="btn btn-outline-primary btn-sm edit-expense-button" data-expense-id="${expense.id}">Edit</button>`
                             });
                         });
                     }
@@ -375,7 +379,8 @@
                         transaction.expense ?? '',
                         transaction.date.toLocaleDateString('en-CA').replace(/-/g, '/'),
                         transaction.createdBy ?? '',
-                        transaction.notes
+                        transaction.notes,
+                        transaction.action
                     ]);
 
                     if ($.fn.dataTable.isDataTable('#datatablesSimple')) {
@@ -389,7 +394,8 @@
                                 { title: 'Expense' },
                                 { title: 'Date' },
                                 { title: 'Recorded by' },
-                                { title: 'Notes' }
+                                { title: 'Notes' },
+                                { title: 'Action', orderable: false, searchable: false }
                             ],
                             dom: 'Bfrtip',
                             buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],

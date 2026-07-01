@@ -25,6 +25,7 @@ function attachListeners() {
     document.getElementById('bookingTo')?.addEventListener('change', loadBookings);
     document.getElementById('searchInput')?.addEventListener('input', renderBookings);
     document.getElementById('calendarGrid')?.addEventListener('click', handleCalendarClick);
+    document.addEventListener('click', handleExpenseEditClick);
     document.getElementById('previousCalendarMonth')?.addEventListener('click', () => changeCalendarMonth(-1));
     document.getElementById('todayCalendarMonth')?.addEventListener('click', () => {
         calendarCursor = startOfMonth(new Date());
@@ -80,6 +81,19 @@ function toDateInputValue(date) {
     const day = String(date.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
+}
+
+function toExpenseDateInputValue(value) {
+    if (!value) return toDateInputValue(new Date());
+
+    const dateString = String(value);
+    const dateOnlyMatch = dateString.match(/^\d{4}-\d{2}-\d{2}/);
+
+    if (dateOnlyMatch) {
+        return dateOnlyMatch[0];
+    }
+
+    return toDateInputValue(new Date(value));
 }
 
 async function updateDashboard() {
@@ -676,25 +690,26 @@ async function submitIncome() {
     }
 }
 
-function recordExpenses() {
+function recordExpenses(expense = null) {
+    const isEditing = Boolean(expense?.id);
     const adminName = getAdminName();
     openPanel(`
         <div class="booking-panel">
             <div class="d-flex align-items-center justify-content-between mb-3">
-                <h3 class="mb-0">Record Expense</h3>
+                <h3 class="mb-0">${isEditing ? 'Edit Expense' : 'Record Expense'}</h3>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="closePanel">Close</button>
             </div>
             <label for="expenseName" class="form-label">Expense name</label>
-            <input type="text" id="expenseName" class="form-control mb-3" placeholder="Fuel bikes">
+            <input type="text" id="expenseName" class="form-control mb-3" placeholder="Fuel bikes" value="${escapeHtml(expense?.expense_name || '')}">
             <label for="expenseAmount" class="form-label">Amount</label>
-            <input type="number" min="0" step="0.01" id="expenseAmount" class="form-control mb-3">
+            <input type="number" min="0" step="0.01" id="expenseAmount" class="form-control mb-3" value="${escapeHtml(expense?.amount ?? '')}">
             <label for="expenseDate" class="form-label">Date</label>
-            <input type="date" id="expenseDate" class="form-control mb-3" value="${toDateInputValue(new Date())}">
+            <input type="date" id="expenseDate" class="form-control mb-3" value="${escapeHtml(expense ? toExpenseDateInputValue(expense.expense_date) : toDateInputValue(new Date()))}">
             <label for="expenseNotes" class="form-label">Notes</label>
-            <input type="text" id="expenseNotes" class="form-control mb-3">
+            <input type="text" id="expenseNotes" class="form-control mb-3" value="${escapeHtml(expense?.notes || '')}">
             <label class="form-label">Recorded by</label>
             <div class="readonly-admin mb-3">${escapeHtml(adminName)}</div>
-            <button type="button" id="submitExpense" class="btn btn-primary">Submit</button>
+            <button type="button" id="submitExpense" class="btn btn-primary" data-expense-id="${escapeHtml(expense?.id || '')}">${isEditing ? 'Update Expense' : 'Submit'}</button>
         </div>
     `);
     document.getElementById('submitExpense')?.addEventListener('click', submitExpense);
@@ -702,6 +717,8 @@ function recordExpenses() {
 }
 
 async function submitExpense() {
+    const expenseId = document.getElementById('submitExpense')?.dataset.expenseId;
+    const isEditing = Boolean(expenseId);
     const newExpense = {
         name: getValue('expenseName'),
         amount: parseFloat(getValue('expenseAmount')),
@@ -711,8 +728,8 @@ async function submitExpense() {
     };
 
     try {
-        const response = await fetch('/expenses', {
-            method: 'POST',
+        const response = await fetch(isEditing ? `/expenses/${encodeURIComponent(expenseId)}` : '/expenses', {
+            method: isEditing ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newExpense),
         });
@@ -724,7 +741,30 @@ async function submitExpense() {
 
         closePanel();
         await updateDashboard();
-        showMessage('Expense added successfully.', 'success');
+        await loadConsolidation();
+        window.breakDown?.('currentBalance');
+        showMessage(isEditing ? 'Expense updated successfully.' : 'Expense added successfully.', 'success');
+    } catch (error) {
+        showMessage(error.message, 'danger');
+    }
+}
+
+async function handleExpenseEditClick(event) {
+    const button = event.target.closest('.edit-expense-button');
+
+    if (!button) return;
+
+    const expenseId = button.dataset.expenseId;
+
+    try {
+        const response = await fetch(`/expenses/${encodeURIComponent(expenseId)}`);
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Could not load expense');
+        }
+
+        recordExpenses(await response.json());
     } catch (error) {
         showMessage(error.message, 'danger');
     }

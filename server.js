@@ -150,6 +150,32 @@ const normaliseBlank = (value) => {
 };
 const getCreatedBy = (body) => normaliseBlank(body.created_by) || normaliseBlank(body.admin_name) || 'Unknown admin';
 
+function buildExpenseFromBody(body) {
+    return {
+        name: normaliseBlank(body.name),
+        amount: Number(body.amount),
+        date: body.date,
+        notes: normaliseBlank(body.notes) || '',
+        created_by: getCreatedBy(body),
+    };
+}
+
+function validateExpensePayload(expense) {
+    if (!isValidString(expense.name)) {
+        return 'Expense name is required.';
+    }
+
+    if (!isValidNumber(expense.amount)) {
+        return 'Amount must be greater than zero.';
+    }
+
+    if (!isValidDate(expense.date)) {
+        return 'Expense date is required.';
+    }
+
+    return null;
+}
+
 function buildBookingFromBody(body) {
     return {
         customer_name: normaliseBlank(body.customer_name),
@@ -236,30 +262,21 @@ function bookingIncomeSelect(whereClause = '') {
 }
 
 app.post('/expenses', async (req, res) => {
-    const { name, amount, date, notes } = req.body;
-    const createdBy = getCreatedBy(req.body);
+    const expense = buildExpenseFromBody(req.body);
+    const validationError = validateExpensePayload(expense);
 
-    // Validate input
-    if (!isValidString(name)) {
-        console.log('Invalid name');
-    }
-    if (!isValidNumber(amount)) {
-        console.log('Invalid amount');
-    }
-    if (!isValidDate(date)) {
-        console.log('Invalid date');
-    }
-    if (!isValidString(notes)) {
-        console.log('Invalid notes');
-    }
-
-    if (!isValidString(name) || !isValidNumber(amount) || !isValidDate(date) || !isValidString(notes)) {
-        return res.status(400).json({ message: 'Invalid expense data' });
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
     }
 
     try {
-        // Insert into the database
-        await db.query('INSERT INTO expenses (expense_name, amount, expense_date, notes, created_by) VALUES (?, ?, ?, ?, ?)', [name, amount, date, notes, createdBy]);
+        await db.query('INSERT INTO expenses (expense_name, amount, expense_date, notes, created_by) VALUES (?, ?, ?, ?, ?)', [
+            expense.name,
+            expense.amount,
+            expense.date,
+            expense.notes,
+            expense.created_by,
+        ]);
         res.json({ success: true });
 
     } catch (error) {
@@ -286,6 +303,70 @@ app.get('/expenses', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching expenses' });
+    }
+});
+
+app.get('/expenses/:id', async (req, res) => {
+    const expenseId = Number(req.params.id);
+
+    if (!Number.isInteger(expenseId) || expenseId < 1) {
+        return res.status(400).json({ message: 'A valid expense id is required.' });
+    }
+
+    try {
+        const [expenses] = await db.query('SELECT * FROM expenses WHERE id = ?', [expenseId]);
+
+        if (expenses.length === 0) {
+            return res.status(404).json({ message: 'Expense not found.' });
+        }
+
+        res.json(expenses[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching expense' });
+    }
+});
+
+app.put('/expenses/:id', async (req, res) => {
+    const expenseId = Number(req.params.id);
+    const expense = buildExpenseFromBody(req.body);
+    const validationError = validateExpensePayload(expense);
+
+    if (!Number.isInteger(expenseId) || expenseId < 1) {
+        return res.status(400).json({ message: 'A valid expense id is required.' });
+    }
+
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
+    }
+
+    try {
+        const [result] = await db.query(`
+            UPDATE expenses
+            SET
+                expense_name = ?,
+                amount = ?,
+                expense_date = ?,
+                notes = ?,
+                created_by = ?
+            WHERE id = ?
+        `, [
+            expense.name,
+            expense.amount,
+            expense.date,
+            expense.notes,
+            expense.created_by,
+            expenseId,
+        ]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Expense not found.' });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating expense' });
     }
 });
 app.get('/chacco/expenses/total', async (req, res) => {
@@ -867,6 +948,7 @@ app.get('/chacco/balance_breakdown/all', async (req, res) => {
     try {
         const [expensesData] = await db.query(`
             SELECT
+                id,
                 expense_name,
                 amount,
                 expense_date,
