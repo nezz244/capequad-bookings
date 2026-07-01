@@ -1276,9 +1276,11 @@ app.get('/chacco/balance_breakdown/all', async (req, res) => {
     if (!authContext) return;
 
     try {
+        const [expenseIdColumns] = await db.query(`SHOW COLUMNS FROM expenses LIKE 'id'`);
+        const expenseIdSelect = expenseIdColumns.length > 0 ? 'id' : 'NULL AS id';
         const [expensesData] = await db.query(`
             SELECT
-                id,
+                ${expenseIdSelect},
                 expense_name,
                 amount,
                 expense_date,

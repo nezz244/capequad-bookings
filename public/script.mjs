@@ -122,6 +122,7 @@ function renderCashMovement(data) {
     }
 
     (data.expenses || []).forEach((expense) => {
+        const expenseId = expense.id == null ? '' : String(expense.id);
         transactions.push({
             id: expense.id,
             transactionName: expense.expense_name,
@@ -130,7 +131,7 @@ function renderCashMovement(data) {
             date: new Date(expense.expense_date),
             createdBy: expense.created_by || '',
             notes: expense.notes || '',
-            action: isAdmin ? `<button type="button" class="btn btn-outline-primary btn-sm edit-expense-button" data-expense-id="${escapeHtml(expense.id)}">Edit</button>` : '',
+            action: isAdmin && expenseId ? `<button type="button" class="btn btn-outline-primary btn-sm edit-expense-button" data-expense-id="${escapeHtml(expenseId)}">Edit</button>` : '',
         });
     });
 
