@@ -6,3 +6,6 @@ Disallow: /success
 Disallow: /failure
 
 Sitemap: https://capeadrenaline.com/sitemap.xml
+
+# Google Merchant Center product feed
+Allow: /merchant-feed.xml

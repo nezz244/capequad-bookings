@@ -16,7 +16,7 @@ export const landingHomeRoutes: Route[] = [
                     seo: {
                         title: 'Book Quad Biking & Dune Buggy | CapeAdrenaline Cape Town',
                         description:
-                            'Book Cape Town quad biking from R599 and dune buggy tours from R1500 with a scenic waterfall stop. Guided adventures at Trails End Hotel, Grabouw.',
+                            'Book Cape Town quad biking from R499 and dune buggy tours from R1500 with a scenic waterfall stop. Guided adventures at Trails End Hotel, Grabouw.',
                         keywords:
                             'book quad biking Cape Town, book dune buggy, waterfall adventure tour, Grabouw booking, CapeAdrenaline',
                         path: '/home',

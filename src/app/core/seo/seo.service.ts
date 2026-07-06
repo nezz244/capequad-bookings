@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { Inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { environment } from 'environments/environment';
+import { BOOKING_ACTIVITIES, BookingActivity } from 'app/modules/landing/home/booking-catalog';
 import { SeoConfig } from './seo.types';
 
 @Injectable({ providedIn: 'root' })
@@ -94,6 +95,9 @@ export class SeoService {
             head.appendChild(script);
         }
         const contact = environment.contact;
+        const siteUrl = this._normalizeSiteUrl(this._seo.siteUrl);
+        const productNodes = BOOKING_ACTIVITIES.map(activity => this._activityToProductJsonLd(activity, siteUrl));
+
         script.textContent = JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
@@ -127,28 +131,56 @@ export class SeoService {
                         latitude: -34.1516,
                         longitude: 19.0153
                     },
-                    priceRange: 'R599-R1500',
-                    makesOffer: [
-                        {
-                            '@type': 'Offer',
-                            name: 'Quad biking 1 hour with waterfall stop',
-                            price: '599',
-                            priceCurrency: 'ZAR',
-                            availability: 'https://schema.org/InStock',
-                            url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home`
-                        },
-                        {
-                            '@type': 'Offer',
-                            name: 'Dune buggy experience with waterfall stop',
-                            price: '1500',
-                            priceCurrency: 'ZAR',
-                            availability: 'https://schema.org/InStock',
-                            url: `${this._normalizeSiteUrl(this._seo.siteUrl)}/home`
-                        }
-                    ]
-                }
+                    priceRange: 'R499-R1500',
+                    makesOffer: productNodes.map(product => product.offers)
+                },
+                {
+                    '@type': 'ItemList',
+                    '@id': `${canonicalUrl}#products`,
+                    name: 'CapeAdrenaline bookable adventures',
+                    itemListElement: productNodes.map((product, index) => ({
+                        '@type': 'ListItem',
+                        position: index + 1,
+                        item: { '@id': product['@id'] }
+                    }))
+                },
+                ...productNodes
             ]
         });
+    }
+
+    private _activityToProductJsonLd(activity: BookingActivity, siteUrl: string): Record<string, any> {
+        const url = `${siteUrl}/home#${activity.slug}`;
+        const image = this._toAbsoluteUrl(activity.imgUrl, siteUrl);
+
+        return {
+            '@type': 'Product',
+            '@id': `${url}#product`,
+            name: activity.title,
+            description: activity.shortDescription,
+            image,
+            brand: {
+                '@type': 'Brand',
+                name: this._seo.siteName
+            },
+            category: activity.merchantProductType,
+            offers: {
+                '@type': 'Offer',
+                url,
+                price: activity.price.toString(),
+                priceCurrency: 'ZAR',
+                availability: 'https://schema.org/InStock',
+                itemCondition: 'https://schema.org/NewCondition',
+                seller: {
+                    '@type': 'Organization',
+                    name: this._seo.siteName
+                }
+            }
+        };
+    }
+
+    private _toAbsoluteUrl(path: string, siteUrl: string): string {
+        return path.startsWith('http') ? path : `${siteUrl}/${path.replace(/^\//, '')}`;
     }
 
     private _normalizeSiteUrl(url: string): string {
