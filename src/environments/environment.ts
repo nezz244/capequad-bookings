@@ -11,7 +11,7 @@ export const environment = {
         defaultDescription:
             'Book Cape Town quad biking from R499 and dune buggy adventures from R1500 with a scenic waterfall stop. Guided tours from Trails End Hotel, Grabouw - CapeAdrenaline.',
         defaultKeywords:
-            'Cape Town quad biking, dune buggy Cape Town, Grabouw adventure, waterfall tour, Trails End Hotel, CapeAdrenaline, Western Cape tours',
+            'Cape Town quad biking, dune buggy Cape Town, Grabouw adventure, waterfall tour, Trails End Hotel, CapeAdrenaline, Western Cape tours, kids parties, kids birthdays, bachelor party, capetown waterfall quadbike tour',
         defaultImage: 'assets/images/activities/buggy7.png',
         locale: 'en_ZA',
         googleSiteVerification: ''
@@ -36,8 +36,7 @@ export const environment = {
       projectId: "cape-quad-new112",
       storageBucket: "cape-quad-new112.appspot.com",
       messagingSenderId: "1015309044140",
-      appId: "1:1015309044140:web:b5c3d5727f75a361e71209",
-      measurementId: "G-RKTG0E8RH2"
+      appId: "1:1015309044140:web:b5c3d5727f75a361e71209"
     },
       production: false
   };
