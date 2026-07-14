@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 
 declare var gtag: Function;
 
+const GOOGLE_ADS_PURCHASE_DESTINATION = 'AW-18322448078/mKS6CJGvvdAcEM696aBE';
+
 @Component({
   selector: 'app-success',
   templateUrl: './success.component.html',
@@ -20,19 +22,17 @@ export class SuccessComponent implements OnInit {
     this.booking = JSON.parse(localStorage.getItem('booking'));
 
     if (this.payment && this.booking) {
+      const purchaseValue = Number(this.booking.totalCost);
+      const transactionId = String(this.payment.id || '');
 
-      // ✅ FIRE GOOGLE CONVERSION HERE
-      gtag('event', 'purchase', {
-        transaction_id: this.payment.id,
-        value: this.payment.amount || this.booking.totalCost,
-        currency: 'ZAR',
-        items: [
-          {
-            item_name: this.booking.service,
-            quantity: this.booking.totalTickets
-          }
-        ]
-      });
+      if (Number.isFinite(purchaseValue) && purchaseValue > 0 && transactionId) {
+        gtag('event', 'conversion', {
+          send_to: GOOGLE_ADS_PURCHASE_DESTINATION,
+          transaction_id: transactionId,
+          value: purchaseValue,
+          currency: 'ZAR'
+        });
+      }
 
       localStorage.removeItem('payment');
     }
