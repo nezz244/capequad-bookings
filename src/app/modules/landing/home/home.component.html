@@ -109,7 +109,8 @@
                                 class="ms-2 text-white text-decoration-underline"
                                 [href]="contact.whatsappUrl"
                                 target="_blank"
-                                rel="noopener noreferrer">
+                                rel="noopener noreferrer"
+                                (click)="trackWhatsAppClick()">
                                 {{ contact.whatsappLabel }}
                             </a>
                         </li>

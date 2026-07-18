@@ -1329,6 +1329,12 @@ export class AuthService
     )
   }
 
+  getCheckoutStatus(checkoutId: string) {
+    return this.http.get<any>(
+      AppSettings.API_ENDPOINT + '/checkout/status/' + encodeURIComponent(checkoutId)
+    ).pipe(catchError(this.handleError));
+  }
+
   sendEmail(dto){
     return this.http.post<any>(AppSettings.API_ENDPOINT + '/send/email',
     dto

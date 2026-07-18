@@ -4,6 +4,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CountryISO, PhoneNumberFormat, SearchCountryField } from 'ngx-intl-tel-input';
 import { AuthService } from 'app/core/auth/auth.service';
+import { GoogleAdsService } from 'app/core/analytics/google-ads.service';
 
 @Component({
     selector: 'app-booking-popup',
@@ -32,6 +33,7 @@ export class BookingPopupComponent implements OnInit {
         private _snackBar: MatSnackBar,
         private cd: ChangeDetectorRef,
         private main: AuthService,
+        private googleAds: GoogleAdsService,
         public matDialogRef: MatDialogRef<BookingPopupComponent>,
         @Inject(MAT_DIALOG_DATA) public data: any
     ) {
@@ -199,6 +201,11 @@ export class BookingPopupComponent implements OnInit {
                 if (data.data.status === 'created') {
                     localStorage.setItem('payment', JSON.stringify(data.data));
                     localStorage.setItem('booking', JSON.stringify(dto));
+                    this.googleAds.trackCheckoutStarted(
+                        total,
+                        this.activity.title,
+                        Number(this.f.numberOfPeople.value)
+                    );
                     window.open(data.data.redirectUrl, '_self');
                 } else {
                     this.openSnackBar('Something went wrong, try again later.', 'Close');
